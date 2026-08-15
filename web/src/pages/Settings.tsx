@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { apiRequest } from "../services/api";
+import { apiRequest, apiDownload } from "../services/api";
 import { useToast } from "../context/ToastContext";
 import { 
   Lock, Sparkles, Key, Eye, EyeOff, 
@@ -117,27 +117,16 @@ export const Settings: React.FC = () => {
   const handleExport = async () => {
     setExportLoading(true);
     try {
-      const token = localStorage.getItem("access_token");
-      let url = `http://127.0.0.1:8000/api/v1/transactions/export?format=${exportFormat}&range_type=${exportRange}`;
+      let endpoint = `/transactions/export?format=${exportFormat}&range_type=${exportRange}`;
       if (exportRange === "custom") {
         if (!startDate || !endDate) {
           showToast("Please specify start and end dates.", "warning");
           return;
         }
-        url += `&start_date=${startDate}&end_date=${endDate}`;
+        endpoint += `&start_date=${startDate}&end_date=${endDate}`;
       }
       
-      const response = await fetch(url, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to generate statement file.");
-      }
-      
-      const blob = await response.blob();
+      const blob = await apiDownload(endpoint);
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
