@@ -63,7 +63,11 @@ jobs:
           rm -rf "$ASSETS_DIR"
           mkdir -p "$ASSETS_DIR"
           cp -r dist/. "$ASSETS_DIR/"
-          echo "✅ Copied $(ls dist | wc -l) items into $ASSETS_DIR"
+          # Also copy Capacitor runtime files (cordova shims required by Gradle)
+          cp -f android/app/src/main/assets/public/cordova.js "$ASSETS_DIR/cordova.js" 2>/dev/null || true
+          cp -f android/app/src/main/assets/public/cordova_plugins.js "$ASSETS_DIR/cordova_plugins.js" 2>/dev/null || true
+          echo "✅ Copied dist into $ASSETS_DIR"
+          ls "$ASSETS_DIR"
         working-directory: web
 
       # ── 7. Make Gradle wrapper executable ───────────────────────────────

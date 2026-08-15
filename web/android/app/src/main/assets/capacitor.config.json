@@ -1,0 +1,16 @@
+{
+	"appId": "com.paisawise.app",
+	"appName": "PaisaWise",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"plugins": {
+		"SmsReader": {}
+	},
+	"android": {
+		"allowMixedContent": true,
+		"captureInput": true,
+		"webContentsDebuggingEnabled": true
+	}
+}
