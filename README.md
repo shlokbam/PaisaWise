@@ -50,40 +50,51 @@ Traditional expense trackers require the user to manually enter every single pur
 
 ## 📊 System Architecture
 
-```
-                                  [ Incoming SMS Alert ]
-                                             │
-                                    ( Android Receiver )
-                                             │  (OTP / spam filtered)
-                                             ▼
-                                  ( Local Regex Parser )
-                                             │
-                                             ▼
-                                   [ Local Offline DB ]
-                                             │
-                                             ▼
-                                  ( Sync Queue Worker )
-                                             │
-                                             ▼  (HTTPS / JWT Auth)
-                                      [ FastAPI API ]
-                                             │
-                      ┌──────────────────────┴──────────────────────┐
-                      ▼                                             ▼
-             [ Rules Engine ]                              [ Heuristic Engine ]
-          (User defined patterns)                       (Direction/Transfer match)
-                      │                                             │
-                      └──────────────────────┬──────────────────────┘
-                                             │
-                                             ▼  (If Confidence < 90%)
-                                   [ AI Provider API ]
-                                    (Groq / Mistral)
-                                             │
-                                             ▼
-                                   ( User AI Inbox / )
-                                  ( Needs Review Gate )
-                                             │
-                                             ▼
-                                  [ PostgreSQL Ledger ]
+```mermaid
+graph TD
+    %% Styling
+    classDef device fill:#1E293B,stroke:#3B82F6,stroke-width:2px,color:#fff;
+    classDef backend fill:#0F172A,stroke:#6366F1,stroke-width:2px,color:#fff;
+    classDef ai fill:#311042,stroke:#A855F7,stroke-width:2px,color:#fff;
+    classDef db fill:#0A2540,stroke:#00D4B2,stroke-width:2px,color:#fff;
+    
+    subgraph Device ["Android Device (On-Device Parsing & Queue)"]
+        SMS["Incoming SMS Alert"] -->|"SMS Intent"| Recv("Android SMS Receiver")
+        Recv -->|"Filter Spam/OTPs"| Parser("Local Regex Parser")
+        Parser -->|"Store Offline"| OfflineDB[("Local Room / SQLite DB")]
+        OfflineDB -->|"Sync Manager"| SyncWorker("Sync Queue Worker")
+    end
+    
+    subgraph Server ["PaisaWise FastAPI Backend Service"]
+        SyncWorker -->|"HTTPS + JWT Auth"| API["FastAPI Web API Gateway"]
+        
+        API -->|"Resolve Account"| Accounts["Account Resolver"]
+        Accounts -->|"Evaluate"| Pipeline{"Hybrid Intelligence Pipeline"}
+        
+        Pipeline -->|"1. Rules Engine"| Rules["User Automation Rules"]
+        Pipeline -->|"2. Heuristics"| Heuristics["Transfer / Refund / Merchant Match"]
+        
+        Rules -->|"Match found (Confidence: 1.0)"| DB[("PostgreSQL Ledger")]
+        Heuristics -->|"Known Merchant (Confidence >= 0.90)"| DB
+        
+        Heuristics -->|"Unknown (Confidence < 0.90)"| AIService["AI Classifier Service"]
+    end
+    
+    subgraph AISub ["AI Providers & Human Loop"]
+        AIService -->|"AI Abstraction"| Provider{"Provider Interface"}
+        Provider -->|"groq"| Groq["Groq / Mixtral-8x7B"]
+        Provider -->|"mistral"| Mistral["Mistral Large Client"]
+        
+        Groq -->|"Low Confidence Output"| ReviewBox["User AI Inbox (Needs Review Gate)"]
+        Mistral -->|"Low Confidence Output"| ReviewBox
+        
+        ReviewBox -->|"Human Confirmation / Edits"| DB
+    end
+    
+    class SMS,Recv,Parser,OfflineDB,SyncWorker device;
+    class API,Accounts,Pipeline,Rules,Heuristics,AIService backend;
+    class Provider,Groq,Mistral,ReviewBox ai;
+    class DB db;
 ```
 
 ---
