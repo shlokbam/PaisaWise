@@ -1,12 +1,12 @@
 import httpx
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from app.ai.providers.base import BaseAIProvider
 from app.core.config import settings
 
 class MistralProvider(BaseAIProvider):
-    def __init__(self):
-        self.api_key = settings.MISTRAL_API_KEY
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key or settings.MISTRAL_API_KEY
         self.model = "mistral-large-latest"
         self.api_url = "https://api.mistral.ai/v1/chat/completions"
 

@@ -80,41 +80,60 @@ def get_budget_status(user_id: str, db: Session) -> List[Dict[str, Any]]:
         } for s in status_list
     ]
 
-# JSON schema declarations of the tools to pass to the OpenAI/Groq/Mistral API
 TOOLS_SCHEMA = [
     {
         "type": "function",
         "function": {
             "name": "get_monthly_summary",
-            "description": "Returns the main dashboard financial summaries including personal spending, total money movement (inflow/outflow), financial activity and budget limits."
+            "description": "Returns the main dashboard financial summaries including personal spending, total money movement (inflow/outflow), financial activity and budget limits.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
         }
     },
     {
         "type": "function",
         "function": {
             "name": "get_spending_by_category",
-            "description": "Returns total personal spending grouped by category for the current month."
+            "description": "Returns total personal spending grouped by category for the current month.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
         }
     },
     {
         "type": "function",
         "function": {
             "name": "get_spending_by_merchant",
-            "description": "Returns top 10 merchants by total personal spending for the current month."
+            "description": "Returns top 10 merchants by total personal spending for the current month.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
         }
     },
     {
         "type": "function",
         "function": {
             "name": "get_subscription_total",
-            "description": "Returns active recurring monthly subscriptions (Netflix, Spotify, etc.) and total cost."
+            "description": "Returns active recurring monthly subscriptions (Netflix, Spotify, etc.) and total cost.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
         }
     },
     {
         "type": "function",
         "function": {
             "name": "get_budget_status",
-            "description": "Returns budget limits, spent amounts, and remaining values by category."
+            "description": "Returns budget limits, spent amounts, and remaining values by category.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
         }
     }
 ]

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.transaction import Transaction
 from app.models.category import Category, Subcategory
 from app.ai.providers import get_ai_provider
+from app.models.user import User
 from app.ai.prompts import CLASSIFICATION_SYSTEM_PROMPT, CLASSIFICATION_USER_TEMPLATE
 from typing import Dict, Any, Optional
 import json
@@ -42,7 +43,8 @@ def classify_transaction_with_ai(db: Session, transaction: Transaction) -> Dict[
     Classifies a transaction using the active LLM provider.
     Validates output categories and maps them back to database UUIDs.
     """
-    provider = get_ai_provider()
+    user = db.query(User).filter(User.id == transaction.user_id).first()
+    provider = get_ai_provider(user)
     
     # Get history context
     history = get_transaction_history_context(db, transaction.user_id, transaction.merchant_name)

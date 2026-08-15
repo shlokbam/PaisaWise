@@ -47,7 +47,7 @@ def chat_assistant(
     Exposes conversational assistant.
     Resolves requests using the tool-calling cycle (execute tools locally -> return results to AI).
     """
-    provider = get_ai_provider()
+    provider = get_ai_provider(current_user)
     
     # 1. Build messages history list
     messages = [{"role": "system", "content": SYSTEM_INSTRUCTION}]

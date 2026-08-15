@@ -1,12 +1,12 @@
 import httpx
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from app.ai.providers.base import BaseAIProvider
 from app.core.config import settings
 
 class GroqProvider(BaseAIProvider):
-    def __init__(self):
-        self.api_key = settings.GROQ_API_KEY
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key or settings.GROQ_API_KEY
         self.model = settings.AI_MODEL or "mixtral-8x7b-32768"
         self.api_url = "https://api.groq.com/openai/v1/chat/completions"
 

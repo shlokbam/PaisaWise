@@ -118,7 +118,7 @@ export const Settings: React.FC = () => {
     setExportLoading(true);
     try {
       const token = localStorage.getItem("access_token");
-      let url = `http://localhost:8000/api/v1/transactions/export?format=${exportFormat}&range_type=${exportRange}`;
+      let url = `http://127.0.0.1:8000/api/v1/transactions/export?format=${exportFormat}&range_type=${exportRange}`;
       if (exportRange === "custom") {
         if (!startDate || !endDate) {
           showToast("Please specify start and end dates.", "warning");
@@ -173,7 +173,7 @@ export const Settings: React.FC = () => {
             <div className="relative group mb-4">
               {user?.profile_picture ? (
                 <img 
-                  src={`http://localhost:8000${user.profile_picture}`} 
+                  src={`http://127.0.0.1:8000${user.profile_picture}`} 
                   alt="Avatar" 
                   className="w-24 h-24 rounded-full border border-dark-border object-cover bg-dark-hover"
                 />

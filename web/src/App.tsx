@@ -71,7 +71,7 @@ const AppContent: React.FC = () => {
       )}
 
       {/* Sidebar Navigation */}
-      <aside className={`fixed lg:static inset-y-0 left-0 w-64 bg-dark-card border-r border-dark-border z-30 transform ${
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-dark-card border-r border-dark-border z-30 transform ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } transition-transform duration-300 flex flex-col justify-between`}>
         <div>
@@ -132,7 +132,7 @@ const AppContent: React.FC = () => {
       </aside>
 
       {/* Main Panel Content wrapper */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen lg:pl-64">
         {/* Header (Mobile nav indicator) */}
         <header className="lg:hidden p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between">
           <h1 className="text-lg font-bold tracking-tight text-white">
