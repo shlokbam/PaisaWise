@@ -62,7 +62,16 @@ def save_queue(queue: List[Dict[str, Any]]):
 def authenticate_backend() -> Optional[str]:
     """Logs in to the backend using mock credentials to retrieve JWT token."""
     login_url = f"{API_BASE_URL}/auth/login-json"
-    credentials = {"email": "shlok@paisawise.com", "password": "password"}
+    
+    print("\n--- Sync Authentication ---")
+    email = input("Enter email to sync to [default: shlok@paisawise.com]: ").strip()
+    if not email:
+        email = "shlok@paisawise.com"
+    password = input("Enter password [default: password]: ").strip()
+    if not password:
+        password = "password"
+        
+    credentials = {"email": email, "password": password}
     try:
         resp = httpx.post(login_url, json=credentials)
         if resp.status_code == 200:

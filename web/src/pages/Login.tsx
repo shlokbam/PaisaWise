@@ -61,7 +61,7 @@ export const Login: React.FC = () => {
                   placeholder="Shlok"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full pl-11 glass-input"
+                  className="w-full !pl-12 glass-input"
                 />
               </div>
             </div>
@@ -77,7 +77,7 @@ export const Login: React.FC = () => {
                 placeholder="shlok@paisawise.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-11 glass-input"
+                className="w-full !pl-12 glass-input"
               />
             </div>
           </div>
@@ -92,7 +92,7 @@ export const Login: React.FC = () => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 glass-input"
+                className="w-full !pl-12 glass-input"
               />
             </div>
           </div>

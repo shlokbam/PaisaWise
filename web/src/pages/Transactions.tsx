@@ -136,7 +136,7 @@ export const Transactions: React.FC = () => {
             placeholder="Search by merchant, UPI ID, or body..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 glass-input text-sm"
+            className="w-full !pl-10 pr-4 py-2 glass-input text-sm"
           />
         </div>
         

@@ -10,7 +10,7 @@ from app.models.category import Category
 from app.schemas.budget import BudgetOut, BudgetCreate, BudgetStatus
 from typing import List, Optional
 from decimal import Decimal
-from datetime import date
+from datetime import date, timedelta
 
 router = APIRouter(prefix="/budgets", tags=["budgets"])
 
@@ -30,7 +30,7 @@ def get_budgets_status(
     if today.month == 12:
         end_of_month = date(today.year, 12, 31)
     else:
-        end_of_month = date(today.year, today.month + 1, 1) - func.timedelta(days=1)
+        end_of_month = date(today.year, today.month + 1, 1) - timedelta(days=1)
         
     budgets = (
         db.query(Budget)
