@@ -223,7 +223,7 @@ export const Rules: React.FC = () => {
               </select>
             </div>
 
-            <div className="flex items-center gap-2 mt-4 select-none">
+            <div className="flex items-center gap-2 pt-5 select-none">
               <input
                 type="checkbox"
                 id="rule-inc"
@@ -231,11 +231,11 @@ export const Rules: React.FC = () => {
                 onChange={(e) => setInclude(e.target.checked)}
                 className="rounded bg-dark-bg border-dark-border text-dark-accent"
               />
-              <label htmlFor="rule-inc" className="text-dark-text font-medium">Include in Personal Spending</label>
+              <label htmlFor="rule-inc" className="text-dark-text font-medium cursor-pointer">Include in Personal Spending</label>
             </div>
           </div>
 
-          <div className="flex gap-2 justify-end text-xs pt-2">
+          <div className="flex gap-2 justify-end text-xs pt-4 border-t border-dark-border/40 mt-2">
             <button 
               type="button"
               onClick={() => setShowAddForm(false)}
