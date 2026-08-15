@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest, apiDownload } from "../services/api";
 import { useToast } from "../context/ToastContext";
+import {
+  requestSmsPermission, checkSmsPermission, readAllSms,
+  filterBankSms, isNativeAndroid
+} from "../services/sms";
 import { 
   Lock, Sparkles, Key, Eye, EyeOff, 
-  Upload, CheckCircle, AlertTriangle, FileSpreadsheet, FileText, Download 
+  Upload, CheckCircle, AlertTriangle, FileSpreadsheet, FileText, Download,
+  MessageSquare, ShieldCheck, RefreshCw, Smartphone
 } from "lucide-react";
 
 export const Settings: React.FC = () => {
@@ -37,6 +42,57 @@ export const Settings: React.FC = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [exportLoading, setExportLoading] = useState(false);
+
+  // State for SMS Sync (Android only)
+  const [smsPermission, setSmsPermission] = useState<boolean | null>(null);
+  const [smsSyncing, setSmsSyncing] = useState(false);
+  const [smsSyncResult, setSmsSyncResult] = useState<{ sent: number; skipped: number } | null>(null);
+  const isAndroid = isNativeAndroid();
+
+  useEffect(() => {
+    if (isAndroid) {
+      checkSmsPermission().then(setSmsPermission);
+    }
+  }, [isAndroid]);
+
+  const handleRequestSmsPermission = async () => {
+    const granted = await requestSmsPermission();
+    setSmsPermission(granted);
+    if (granted) showToast("SMS permission granted! You can now sync messages.", "success");
+    else showToast("SMS permission was denied. Please enable it in phone Settings.", "error");
+  };
+
+  const handleSmsSync = async () => {
+    if (!smsPermission) {
+      await handleRequestSmsPermission();
+      return;
+    }
+    setSmsSyncing(true);
+    setSmsSyncResult(null);
+    try {
+      const allMessages = await readAllSms(1000);
+      const bankMessages = filterBankSms(allMessages);
+      let sent = 0;
+      let skipped = 0;
+      for (const msg of bankMessages) {
+        try {
+          await apiRequest("/sms/ingest", {
+            method: "POST",
+            body: JSON.stringify({ sender: msg.sender, body: msg.body }),
+          });
+          sent++;
+        } catch {
+          skipped++;
+        }
+      }
+      setSmsSyncResult({ sent, skipped });
+      showToast(`Synced ${sent} bank messages successfully!`, "success");
+    } catch (err: any) {
+      showToast(err.message || "SMS sync failed.", "error");
+    } finally {
+      setSmsSyncing(false);
+    }
+  };
 
   const handleUpdateKeys = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -439,6 +495,84 @@ export const Settings: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* SMS Sync Card — visible only in Android app */}
+          {isAndroid && (
+            <div className="glass-panel p-6">
+              <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                <Smartphone size={18} className="text-dark-accent" />
+                <span>SMS Transaction Sync</span>
+                <span className="ml-auto text-[10px] bg-green-500/10 border border-green-500/25 text-green-400 px-2 py-0.5 rounded-full font-semibold">Android</span>
+              </h3>
+              <p className="text-xs text-dark-muted mb-5">
+                Grant SMS permission to scan your bank messages and automatically import all transactions into PaisaWise.
+              </p>
+
+              {/* Permission Status */}
+              <div className="flex items-center gap-3 mb-5 p-3 rounded-xl bg-dark-bg/40 border border-dark-border">
+                <div className={`p-2 rounded-lg ${
+                  smsPermission === true
+                    ? "bg-green-500/10 text-green-400"
+                    : smsPermission === false
+                    ? "bg-red-500/10 text-red-400"
+                    : "bg-dark-accent/10 text-dark-accent"
+                }`}>
+                  {smsPermission === true
+                    ? <ShieldCheck size={18} />
+                    : <MessageSquare size={18} />}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {smsPermission === true ? "SMS Permission Granted" :
+                     smsPermission === false ? "SMS Permission Denied" :
+                     "Permission Status Unknown"}
+                  </p>
+                  <p className="text-xs text-dark-muted mt-0.5">
+                    {smsPermission === true
+                      ? "PaisaWise can read your bank messages"
+                      : "Tap below to grant permission"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Sync Result */}
+              {smsSyncResult && (
+                <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
+                  <CheckCircle size={16} />
+                  <span>
+                    Imported <strong>{smsSyncResult.sent}</strong> bank transactions
+                    {smsSyncResult.skipped > 0 && ` (${smsSyncResult.skipped} skipped as duplicates)`}
+                  </span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-1 gap-3">
+                {smsPermission !== true && (
+                  <button
+                    onClick={handleRequestSmsPermission}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-dark-accent/15 border border-dark-accent text-white text-sm font-semibold hover:bg-dark-accent/25 transition-all"
+                  >
+                    <ShieldCheck size={16} />
+                    Grant SMS Read Permission
+                  </button>
+                )}
+                <button
+                  onClick={handleSmsSync}
+                  disabled={smsSyncing}
+                  className="flex items-center justify-center gap-2 w-full premium-btn py-3 disabled:opacity-50"
+                >
+                  {smsSyncing
+                    ? <><RefreshCw size={16} className="animate-spin" /> Scanning Messages...</>
+                    : <><RefreshCw size={16} /> Sync All Bank Messages</>}
+                </button>
+              </div>
+
+              <p className="text-[11px] text-dark-muted mt-4 text-center">
+                Messages are filtered locally — only bank/financial SMS are sent to PaisaWise.
+              </p>
+            </div>
+          )}
 
         </div>
       </div>

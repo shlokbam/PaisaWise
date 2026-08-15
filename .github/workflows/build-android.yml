@@ -1,0 +1,99 @@
+name: Build PaisaWise Android APK
+
+on:
+  # Run automatically on every push to main
+  push:
+    branches: [ main ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/build-android.yml'
+
+  # Also allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'Backend API URL (e.g. http://192.168.1.4:8000/api/v1)'
+        required: false
+        default: 'http://192.168.1.4:8000/api/v1'
+
+jobs:
+  build-apk:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout the repository ──────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Node.js ───────────────────────────────────────────────
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      # ── 3. Set up Java 17 (required by Android Gradle) ──────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # ── 4. Install web dependencies ──────────────────────────────────────
+      - name: Install npm dependencies
+        run: npm ci
+        working-directory: web
+
+      # ── 5. Build the React/Vite web app (with Android API URL) ──────────
+      - name: Build web app for Android
+        run: |
+          # Use the manually-provided URL, or fall back to the default
+          API_URL="${{ github.event.inputs.api_url || 'http://192.168.1.4:8000/api/v1' }}"
+          echo "Building with API URL: $API_URL"
+          VITE_API_BASE_URL="$API_URL" npm run build
+        working-directory: web
+
+      # ── 6. Sync Capacitor (copies dist/ into android/assets/) ───────────
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+        working-directory: web
+
+      # ── 7. Make Gradle wrapper executable ───────────────────────────────
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+        working-directory: web/android
+
+      # ── 8. Build the debug APK ───────────────────────────────────────────
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        working-directory: web/android
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      # ── 9. Upload APK as downloadable artifact ───────────────────────────
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PaisaWise-debug-${{ github.run_number }}
+          path: web/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      # ── 10. Print download instructions in the build log ─────────────────
+      - name: Build complete — download instructions
+        run: |
+          echo "=============================================="
+          echo "  ✅ PaisaWise APK built successfully!"
+          echo "=============================================="
+          echo ""
+          echo "  To install on your Android phone:"
+          echo "  1. Go to: GitHub → Actions → This workflow run"
+          echo "  2. Scroll to 'Artifacts' section at the bottom"
+          echo "  3. Click 'PaisaWise-debug-${{ github.run_number }}' to download"
+          echo "  4. Extract the ZIP and transfer app-debug.apk to your phone"
+          echo "  5. On phone: Settings → Install Unknown Apps → Allow"
+          echo "  6. Tap the APK file to install"
+          echo ""
+          echo "  Backend URL used: ${{ github.event.inputs.api_url || 'http://192.168.1.4:8000/api/v1' }}"
+          echo "=============================================="
