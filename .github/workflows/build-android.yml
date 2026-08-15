@@ -70,14 +70,19 @@ jobs:
           ls "$ASSETS_DIR"
         working-directory: web
 
-      # ── 7. Make Gradle wrapper executable ───────────────────────────────
+      # ── 7. Write local.properties (tells Gradle where the Android SDK is) ─
+      - name: Write local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+        working-directory: web/android
+
+      # ── 8. Make Gradle wrapper executable ───────────────────────────────
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
         working-directory: web/android
 
-      # ── 8. Build the debug APK ───────────────────────────────────────────
+      # ── 9. Build the debug APK ───────────────────────────────────────────
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tail -100
         working-directory: web/android
 
       # ── 9. Upload APK as downloadable artifact ───────────────────────────
