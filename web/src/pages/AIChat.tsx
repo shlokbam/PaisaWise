@@ -86,49 +86,94 @@ export const AIChat: React.FC = () => {
     });
   };
 
-  // Custom rich text parser for list items, headers, and spacing
+  // Custom rich text parser for code blocks, list items, headers, and spacing
   const renderFormattedContent = (content: string) => {
-    return content.split("\n").map((line, idx) => {
-      const cleanLine = line.trim();
-      if (!cleanLine) return <div key={idx} className="h-2" />;
+    const lines = content.split("\n");
+    const renderedElements: React.ReactNode[] = [];
+    
+    let inCodeBlock = false;
+    let codeBlockLines: string[] = [];
+
+    lines.forEach((line, idx) => {
+      const trimmed = line.trim();
+      
+      // Toggle code block
+      if (trimmed.startsWith("```")) {
+        if (inCodeBlock) {
+          renderedElements.push(
+            <pre key={`code-${idx}`} className="bg-dark-bg/60 border border-dark-border p-4 rounded-xl font-mono text-[11px] leading-relaxed my-3 overflow-x-auto text-indigo-300">
+              <code>{codeBlockLines.join("\n")}</code>
+            </pre>
+          );
+          codeBlockLines = [];
+          inCodeBlock = false;
+        } else {
+          inCodeBlock = true;
+        }
+        return;
+      }
+      
+      if (inCodeBlock) {
+        codeBlockLines.push(line);
+        return;
+      }
+      
+      if (!trimmed) {
+        renderedElements.push(<div key={idx} className="h-2" />);
+        return;
+      }
 
       // Header matching
-      if (cleanLine.startsWith("###")) {
-        const text = cleanLine.replace(/^###\s*/, "");
-        return (
-          <h4 key={idx} className="text-sm font-bold text-white mt-3 mb-1 flex items-center gap-1.5">
-            <span className="w-1 h-3 bg-dark-accent rounded-full" />
+      if (trimmed.startsWith("###")) {
+        const text = trimmed.replace(/^###\s*/, "");
+        renderedElements.push(
+          <h4 key={idx} className="text-sm font-bold text-white mt-3.5 mb-1.5 flex items-center gap-1.5">
+            <span className="w-1 h-3.5 bg-dark-accent rounded-full" />
             {parseInlineStyles(text)}
           </h4>
         );
+        return;
       }
-      if (cleanLine.startsWith("##")) {
-        const text = cleanLine.replace(/^##\s*/, "");
-        return (
+      if (trimmed.startsWith("##")) {
+        const text = trimmed.replace(/^##\s*/, "");
+        renderedElements.push(
           <h3 key={idx} className="text-base font-bold text-white mt-4 mb-2 flex items-center gap-1.5">
             <span className="w-1.5 h-4 bg-dark-accent rounded-full" />
             {parseInlineStyles(text)}
           </h3>
         );
+        return;
       }
 
       // Bullet items matching
-      if (cleanLine.startsWith("-") || cleanLine.startsWith("*")) {
-        const text = cleanLine.replace(/^[-*]\s*/, "");
-        return (
+      if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
+        const text = trimmed.replace(/^[-*]\s*/, "");
+        renderedElements.push(
           <div key={idx} className="flex gap-2 items-start pl-2 py-0.5">
             <span className="text-dark-accent mt-1.5 text-xs font-bold">•</span>
             <span className="flex-1 text-dark-muted text-sm leading-relaxed">{parseInlineStyles(text)}</span>
           </div>
         );
+        return;
       }
 
-      return (
+      // Standard paragraph
+      renderedElements.push(
         <p key={idx} className="py-0.5 text-dark-muted text-sm leading-relaxed">
-          {parseInlineStyles(cleanLine)}
+          {parseInlineStyles(trimmed)}
         </p>
       );
     });
+
+    if (inCodeBlock && codeBlockLines.length > 0) {
+      renderedElements.push(
+        <pre key="code-unclosed" className="bg-dark-bg/60 border border-dark-border p-4 rounded-xl font-mono text-[11px] leading-relaxed my-3 overflow-x-auto text-indigo-300">
+          <code>{codeBlockLines.join("\n")}</code>
+        </pre>
+      );
+    }
+
+    return renderedElements;
   };
 
   return (
