@@ -65,6 +65,399 @@ def get_transactions(
     offset = (page - 1) * limit
     return query.offset(offset).limit(limit).all()
 
+@router.get("/export")
+def export_transactions(
+    format: str = "csv",
+    range_type: str = "month",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Export transaction list to CSV or PDF based on date range criteria.
+    Format options: 'csv', 'pdf'
+    Range type options: 'week', 'month', 'year', 'custom'
+    """
+    today = date.today()
+    query_start = None
+    query_end = today + timedelta(days=1) # include today
+    
+    if range_type == "week":
+        query_start = today - timedelta(days=7)
+    elif range_type == "month":
+        query_start = today - timedelta(days=30)
+    elif range_type == "year":
+        query_start = today - timedelta(days=365)
+    elif range_type == "custom":
+        if start_date:
+            query_start = datetime.fromisoformat(start_date).date()
+        if end_date:
+            query_end = datetime.fromisoformat(end_date).date() + timedelta(days=1)
+            
+    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
+    if query_start:
+        query = query.filter(Transaction.transaction_date >= query_start)
+    if query_end:
+        query = query.filter(Transaction.transaction_date < query_end)
+        
+    transactions = query.order_by(Transaction.transaction_date.desc()).all()
+    
+    if format == "csv":
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Ledger Report"
+        
+        # Grid lines
+        ws.views.sheetView[0].showGridLines = True
+        
+        # Colors
+        PURPLE_HEADER = "4F46E5"
+        WHITE = "FFFFFF"
+        LIGHT_SLATE = "F1F5F9"
+        GREEN_TEXT = "10B981"
+        RED_TEXT = "F43F5E"
+        DARK_TEXT = "0F172A"
+        MUTED_TEXT = "475569"
+        
+        # Styles
+        font_title = Font(name="Calibri", size=16, bold=True, color="FFFFFF")
+        font_header = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        font_bold = Font(name="Calibri", size=11, bold=True, color=DARK_TEXT)
+        font_regular = Font(name="Calibri", size=11, color=DARK_TEXT)
+        font_muted = Font(name="Calibri", size=10, italic=True, color=MUTED_TEXT)
+        
+        fill_title = PatternFill(start_color="0B0F19", end_color="0B0F19", fill_type="solid")
+        fill_header = PatternFill(start_color=PURPLE_HEADER, end_color=PURPLE_HEADER, fill_type="solid")
+        fill_alt = PatternFill(start_color=LIGHT_SLATE, end_color=LIGHT_SLATE, fill_type="solid")
+        
+        border_thin = Border(
+            left=Side(style='thin', color="CBD5E1"),
+            right=Side(style='thin', color="CBD5E1"),
+            top=Side(style='thin', color="CBD5E1"),
+            bottom=Side(style='thin', color="CBD5E1")
+        )
+        
+        align_center = Alignment(horizontal="center", vertical="center")
+        align_left = Alignment(horizontal="left", vertical="center")
+        align_right = Alignment(horizontal="right", vertical="center")
+        
+        # Header Banner
+        ws.merge_cells("A1:I2")
+        title_cell = ws["A1"]
+        title_cell.value = "PaisaWise Financial Statement"
+        title_cell.font = font_title
+        title_cell.fill = fill_title
+        title_cell.alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Statement Metadata (Row 4-6)
+        ws["A4"] = "Generated on:"
+        ws["A4"].font = font_bold
+        ws["B4"] = today.isoformat()
+        ws["B4"].font = font_regular
+        
+        ws["A5"] = "Scope:"
+        ws["A5"].font = font_bold
+        ws["B5"] = f"{range_type.upper()} ({query_start or 'All'} to {query_end or 'Today'})"
+        ws["B5"].font = font_regular
+        
+        ws["A6"] = "User Account:"
+        ws["A6"].font = font_bold
+        ws["B6"] = current_user.email
+        ws["B6"].font = font_regular
+        
+        # Summary Box Cards (D4:G6)
+        total_inflow = sum(tx.amount for tx in transactions if tx.transaction_type == "INCOME")
+        total_outflow = sum(tx.amount for tx in transactions if tx.transaction_type == "EXPENSE")
+        personal_spending = sum(tx.amount for tx in transactions if tx.include_in_personal_expenses)
+        investments = sum(tx.amount for tx in transactions if tx.transaction_type == "INVESTMENT")
+        
+        ws["D4"] = "Total Inflow"
+        ws["D4"].font = font_muted
+        ws["D5"] = total_inflow
+        ws["D5"].font = Font(name="Calibri", size=13, bold=True, color=GREEN_TEXT)
+        ws["D5"].number_format = '"INR "#,##0.00'
+        
+        ws["E4"] = "Total Outflow"
+        ws["E4"].font = font_muted
+        ws["E5"] = total_outflow
+        ws["E5"].font = Font(name="Calibri", size=13, bold=True, color=RED_TEXT)
+        ws["E5"].number_format = '"INR "#,##0.00'
+        
+        ws["F4"] = "Personal Spending"
+        ws["F4"].font = font_muted
+        ws["F5"] = personal_spending
+        ws["F5"].font = Font(name="Calibri", size=13, bold=True, color=PURPLE_HEADER)
+        ws["F5"].number_format = '"INR "#,##0.00'
+
+        ws["G4"] = "Investments"
+        ws["G4"].font = font_muted
+        ws["G5"] = investments
+        ws["G5"].font = Font(name="Calibri", size=13, bold=True, color="2563EB")
+        ws["G5"].number_format = '"INR "#,##0.00'
+        
+        # Header Row (Row 8)
+        headers = [
+            "Date", "Merchant/Sender", "Amount (INR)", "Type", "Ownership", 
+            "Category", "Payment Method", "Status", "Confidence"
+        ]
+        
+        for col_num, header_title in enumerate(headers, 1):
+            cell = ws.cell(row=8, column=col_num)
+            cell.value = header_title
+            cell.font = font_header
+            cell.fill = fill_header
+            cell.alignment = align_center
+            cell.border = border_thin
+            
+        # Data Rows (Row 9+)
+        row_idx = 9
+        for tx in transactions:
+            category_name = tx.category.name if tx.category else "Uncategorized"
+            status = "Personal Spending" if tx.include_in_personal_expenses else "Excluded"
+            confidence_val = (tx.confidence if tx.confidence is not None else Decimal("1.00"))
+            
+            row_data = [
+                tx.transaction_date,
+                tx.merchant_name or tx.sender or "Unknown",
+                tx.amount,
+                tx.transaction_type,
+                tx.ownership,
+                category_name,
+                tx.payment_method or "UPI",
+                status,
+                confidence_val
+            ]
+            
+            fill_row = fill_alt if row_idx % 2 == 0 else None
+            
+            for col_num, val in enumerate(row_data, 1):
+                cell = ws.cell(row=row_idx, column=col_num)
+                cell.value = val
+                cell.font = font_regular
+                cell.border = border_thin
+                if fill_row:
+                    cell.fill = fill_row
+                    
+                # Format cell data
+                if col_num == 1: # Date
+                    cell.number_format = "YYYY-MM-DD"
+                    cell.alignment = align_center
+                elif col_num == 2 or col_num == 6: # Merchant / Category
+                    cell.alignment = align_left
+                elif col_num == 3: # Amount
+                    cell.number_format = "#,##0.00"
+                    cell.alignment = align_right
+                elif col_num == 4: # Type (Color dynamically!)
+                    cell.alignment = align_center
+                    if val == "INCOME":
+                        cell.font = Font(name="Calibri", size=11, bold=True, color=GREEN_TEXT)
+                    elif val == "EXPENSE":
+                        cell.font = Font(name="Calibri", size=11, bold=True, color=RED_TEXT)
+                elif col_num == 9: # Confidence
+                    cell.number_format = "0%"
+                    cell.alignment = align_center
+                else:
+                    cell.alignment = align_center
+                    
+            row_idx += 1
+            
+        # Auto-fit Column Widths
+        for col in ws.columns:
+            max_len = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                if cell.row in [1, 2]:
+                    continue
+                if cell.value:
+                    if isinstance(cell.value, (int, float, Decimal)):
+                        max_len = max(max_len, 12)
+                    else:
+                        max_len = max(max_len, len(str(cell.value)))
+            ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        filename = f"paisawise_report_{range_type}_{today.isoformat()}.xlsx"
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    elif format == "pdf":
+        pdf = FPDF(orientation="P", unit="mm", format="A4")
+        pdf.add_page()
+        pdf.set_margins(10, 10, 10)
+        
+        # Draw Header Banner (Deep Blue background)
+        pdf.set_fill_color(11, 15, 25) # dark.bg
+        pdf.rect(0, 0, 210, 40, "F")
+        
+        # PaisaWise Logo / Title
+        pdf.set_font("helvetica", "B", 18)
+        pdf.set_text_color(248, 250, 252) # dark.text
+        pdf.set_xy(10, 12)
+        pdf.cell(0, 8, "PaisaWise Financial Statement", align="L")
+        
+        # Sub-header Info (Right-aligned in Header Banner)
+        pdf.set_font("helvetica", "", 9)
+        pdf.set_text_color(148, 163, 184) # dark.muted
+        pdf.set_xy(120, 10)
+        pdf.cell(80, 5, f"Generated: {today.isoformat()}", ln=True, align="R")
+        pdf.set_xy(120, 15)
+        pdf.cell(80, 5, f"Account: {current_user.email}", ln=True, align="R")
+        pdf.set_xy(120, 20)
+        pdf.cell(80, 5, f"Scope: {range_type.upper()}", ln=True, align="R")
+        
+        # Add a colored divider bar below header banner
+        pdf.set_fill_color(79, 70, 229) # dark.accent (purple)
+        pdf.rect(0, 40, 210, 2, "F")
+        
+        pdf.set_xy(10, 48)
+        
+        # Summary Box Cards (Styled grid)
+        total_inflow = sum(tx.amount for tx in transactions if tx.transaction_type == "INCOME")
+        total_outflow = sum(tx.amount for tx in transactions if tx.transaction_type == "EXPENSE")
+        personal_spending = sum(tx.amount for tx in transactions if tx.include_in_personal_expenses)
+        investments = sum(tx.amount for tx in transactions if tx.transaction_type == "INVESTMENT")
+        
+        pdf.set_font("helvetica", "B", 12)
+        pdf.set_text_color(11, 15, 25)
+        pdf.cell(0, 8, "Financial Summary Metrics", ln=True)
+        pdf.ln(2)
+        
+        # Render 4 Cards
+        # Total inflow Card (Green)
+        pdf.set_fill_color(240, 253, 250) # Light teal bg
+        pdf.set_draw_color(16, 185, 129) # Teal border
+        pdf.rect(10, 58, 44, 18, "DF")
+        pdf.set_xy(12, 60)
+        pdf.set_font("helvetica", "", 8)
+        pdf.set_text_color(71, 85, 105)
+        pdf.cell(40, 4, "Total Inflow", ln=True)
+        pdf.set_xy(12, 65)
+        pdf.set_font("helvetica", "B", 10.5)
+        pdf.set_text_color(16, 185, 129)
+        pdf.cell(40, 5, f"INR {total_inflow:,.2f}")
+        
+        # Total Outflow Card (Red/Rose)
+        pdf.set_fill_color(255, 241, 242) # Light rose bg
+        pdf.set_draw_color(244, 63, 94) # Rose border
+        pdf.rect(57, 58, 44, 18, "DF")
+        pdf.set_xy(59, 60)
+        pdf.set_font("helvetica", "", 8)
+        pdf.set_text_color(71, 85, 105)
+        pdf.cell(40, 4, "Total Outflow", ln=True)
+        pdf.set_xy(59, 65)
+        pdf.set_font("helvetica", "B", 10.5)
+        pdf.set_text_color(244, 63, 94)
+        pdf.cell(40, 5, f"INR {total_outflow:,.2f}")
+        
+        # Personal Spending Card (Purple)
+        pdf.set_fill_color(245, 243, 255) # Light purple bg
+        pdf.set_draw_color(79, 70, 229) # Purple border
+        pdf.rect(104, 58, 44, 18, "DF")
+        pdf.set_xy(106, 60)
+        pdf.set_font("helvetica", "", 8)
+        pdf.set_text_color(71, 85, 105)
+        pdf.cell(40, 4, "Personal Spending", ln=True)
+        pdf.set_xy(106, 65)
+        pdf.set_font("helvetica", "B", 10.5)
+        pdf.set_text_color(79, 70, 229)
+        pdf.cell(40, 5, f"INR {personal_spending:,.2f}")
+        
+        # Investments Card (Blue)
+        pdf.set_fill_color(239, 246, 255) # Light blue bg
+        pdf.set_draw_color(37, 99, 235) # Blue border
+        pdf.rect(151, 58, 49, 18, "DF")
+        pdf.set_xy(153, 60)
+        pdf.set_font("helvetica", "", 8)
+        pdf.set_text_color(71, 85, 105)
+        pdf.cell(45, 4, "Investments", ln=True)
+        pdf.set_xy(153, 65)
+        pdf.set_font("helvetica", "B", 10.5)
+        pdf.set_text_color(37, 99, 235)
+        pdf.cell(45, 5, f"INR {investments:,.2f}")
+        
+        pdf.set_xy(10, 82)
+        pdf.set_font("helvetica", "B", 12)
+        pdf.set_text_color(11, 15, 25)
+        pdf.cell(0, 8, "Transaction Ledger", ln=True)
+        pdf.ln(2)
+        
+        # Table Header
+        widths = [20, 45, 28, 18, 35, 18, 16, 10]
+        headers = ["Date", "Merchant/Sender", "Amount (INR)", "Type", "Category", "Payment", "Pers.?", "Conf"]
+        
+        pdf.set_fill_color(79, 70, 229) # Purple header bg
+        pdf.set_draw_color(203, 213, 225)  # Slate border
+        pdf.set_font("helvetica", "B", 8)
+        pdf.set_text_color(255, 255, 255)
+        
+        for w, h_title in zip(widths, headers):
+            pdf.cell(w, 8, h_title, border=1, align="C", fill=True)
+        pdf.ln()
+        
+        # Table Data Rows
+        pdf.set_font("helvetica", "", 8)
+        pdf.set_text_color(15, 23, 42)
+        
+        row_idx = 0
+        for tx in transactions:
+            category_name = tx.category.name if tx.category else "Uncategorized"
+            is_personal = "Yes" if tx.include_in_personal_expenses else "No"
+            merchant = tx.merchant_name or tx.sender or "Unknown"
+            confidence_pct = f"{int(tx.confidence * 100)}%" if tx.confidence is not None else "100%"
+            
+            if len(merchant) > 24:
+                merchant = merchant[:21] + "..."
+                
+            if row_idx % 2 == 0:
+                pdf.set_fill_color(255, 255, 255)
+            else:
+                pdf.set_fill_color(241, 245, 249) # Light slate grey
+                
+            pdf.cell(widths[0], 8, tx.transaction_date.isoformat(), border=1, align="C", fill=True)
+            pdf.cell(widths[1], 8, merchant, border=1, fill=True)
+            
+            # Amount
+            pdf.set_font("helvetica", "B", 8)
+            if tx.transaction_type == "EXPENSE":
+                pdf.set_text_color(244, 63, 94) # Rose
+            elif tx.transaction_type == "INCOME":
+                pdf.set_text_color(16, 185, 129) # Green
+            else:
+                pdf.set_text_color(15, 23, 42)
+            pdf.cell(widths[2], 8, f"{tx.amount:,.2f}", border=1, align="R", fill=True)
+            
+            pdf.set_font("helvetica", "", 8)
+            pdf.set_text_color(15, 23, 42)
+            
+            pdf.cell(widths[3], 8, tx.transaction_type, border=1, align="C", fill=True)
+            pdf.cell(widths[4], 8, category_name, border=1, fill=True)
+            pdf.cell(widths[5], 8, tx.payment_method or "UPI", border=1, align="C", fill=True)
+            pdf.cell(widths[6], 8, is_personal, border=1, align="C", fill=True)
+            pdf.cell(widths[7], 8, confidence_pct, border=1, align="C", fill=True)
+            pdf.ln()
+            row_idx += 1
+            
+        filename = f"paisawise_statement_{range_type}_{today.isoformat()}.pdf"
+        pdf_bytes = pdf.output()
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    raise HTTPException(status_code=400, detail="Invalid export format. Must be 'csv' or 'pdf'.")
+
 @router.get("/{id}", response_model=TransactionOut)
 def get_transaction(
     id: str,
@@ -111,144 +504,6 @@ def create_transaction(
     db.commit()
     db.refresh(tx)
     return tx
-
-@router.get("/export")
-def export_transactions(
-    format: str = "csv",
-    range_type: str = "month",
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Export transaction list to CSV or PDF based on date range criteria.
-    Format options: 'csv', 'pdf'
-    Range type options: 'week', 'month', 'year', 'custom'
-    """
-    today = date.today()
-    query_start = None
-    query_end = today + timedelta(days=1) # include today
-    
-    if range_type == "week":
-        query_start = today - timedelta(days=7)
-    elif range_type == "month":
-        query_start = today - timedelta(days=30)
-    elif range_type == "year":
-        query_start = today - timedelta(days=365)
-    elif range_type == "custom":
-        if start_date:
-            query_start = datetime.fromisoformat(start_date).date()
-        if end_date:
-            query_end = datetime.fromisoformat(end_date).date() + timedelta(days=1)
-            
-    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
-    if query_start:
-        query = query.filter(Transaction.transaction_date >= query_start)
-    if query_end:
-        query = query.filter(Transaction.transaction_date < query_end)
-        
-    transactions = query.order_by(Transaction.transaction_date.desc()).all()
-    
-    if format == "csv":
-        # Generate CSV File
-        output = io.StringIO()
-        writer = csv.writer(output)
-        
-        # Header row
-        writer.writerow([
-            "Date", "Merchant/Sender", "Amount (INR)", "Type", "Ownership", 
-            "Category", "Payment Method", "Status", "Confidence"
-        ])
-        
-        for tx in transactions:
-            category_name = tx.category.name if tx.category else "Uncategorized"
-            status = "Personal Spending" if tx.include_in_personal_expenses else "Excluded/Other"
-            writer.writerow([
-                tx.transaction_date.isoformat(),
-                tx.merchant_name or tx.sender or "Unknown",
-                f"{tx.amount:.2f}",
-                tx.transaction_type,
-                tx.ownership,
-                category_name,
-                tx.payment_method or "UPI",
-                status,
-                f"{int(tx.confidence * 100)}%"
-            ])
-            
-        output.seek(0)
-        filename = f"paisawise_report_{range_type}_{today.isoformat()}.csv"
-        return StreamingResponse(
-            io.BytesIO(output.getvalue().encode("utf-8")),
-            media_type="text/csv",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-        
-    elif format == "pdf":
-        # Generate PDF File using fpdf2
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("helvetica", "B", 16)
-        
-        # Title Block
-        pdf.cell(0, 10, "PaisaWise Financial Statement", ln=True, align="C")
-        pdf.set_font("helvetica", "", 10)
-        pdf.cell(0, 8, f"Generated on: {today.isoformat()}", ln=True, align="C")
-        pdf.cell(0, 8, f"Statement Scope: {range_type.upper()} ({query_start or 'All'} to {query_end or 'Today'})", ln=True, align="C")
-        pdf.cell(0, 8, f"User Account: {current_user.email}", ln=True, align="C")
-        pdf.ln(10)
-        
-        # Summary Box
-        total_inflow = sum(tx.amount for tx in transactions if tx.transaction_type == "INCOME")
-        total_outflow = sum(tx.amount for tx in transactions if tx.transaction_type == "EXPENSE")
-        personal_spending = sum(tx.amount for tx in transactions if tx.include_in_personal_expenses)
-        investments = sum(tx.amount for tx in transactions if tx.transaction_type == "INVESTMENT")
-        
-        pdf.set_font("helvetica", "B", 12)
-        pdf.cell(0, 8, "Financial Summary Metrics", ln=True)
-        pdf.set_font("helvetica", "", 10)
-        pdf.cell(45, 8, f"Total Inflow: INR {total_inflow:,.2f}", border=1)
-        pdf.cell(45, 8, f"Total Outflow: INR {total_outflow:,.2f}", border=1)
-        pdf.cell(50, 8, f"Personal Spending: INR {personal_spending:,.2f}", border=1)
-        pdf.cell(50, 8, f"Investments: INR {investments:,.2f}", border=1)
-        pdf.ln(15)
-        
-        # Transaction List Table Header
-        pdf.set_font("helvetica", "B", 10)
-        pdf.cell(25, 8, "Date", border=1, align="C")
-        pdf.cell(55, 8, "Merchant/Sender", border=1)
-        pdf.cell(30, 8, "Amount (INR)", border=1, align="R")
-        pdf.cell(25, 8, "Type", border=1, align="C")
-        pdf.cell(35, 8, "Category", border=1)
-        pdf.cell(20, 8, "Personal?", border=1, align="C")
-        pdf.ln()
-        
-        # Table rows
-        pdf.set_font("helvetica", "", 9)
-        for tx in transactions:
-            category_name = tx.category.name if tx.category else "Uncategorized"
-            is_personal = "Yes" if tx.include_in_personal_expenses else "No"
-            merchant = tx.merchant_name or tx.sender or "Unknown"
-            if len(merchant) > 28:
-                merchant = merchant[:25] + "..."
-                
-            pdf.cell(25, 8, tx.transaction_date.isoformat(), border=1, align="C")
-            pdf.cell(55, 8, merchant, border=1)
-            pdf.cell(30, 8, f"{tx.amount:,.2f}", border=1, align="R")
-            pdf.cell(25, 8, tx.transaction_type, border=1, align="C")
-            pdf.cell(35, 8, category_name, border=1)
-            pdf.cell(20, 8, is_personal, border=1, align="C")
-            pdf.ln()
-            
-        filename = f"paisawise_statement_{range_type}_{today.isoformat()}.pdf"
-        pdf_bytes = pdf.output()
-        return StreamingResponse(
-            io.BytesIO(pdf_bytes),
-            media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-        
-    raise HTTPException(status_code=400, detail="Invalid export format. Must be 'csv' or 'pdf'.")
 
 @router.patch("/{id}", response_model=TransactionOut)
 def update_transaction(
