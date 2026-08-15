@@ -16,6 +16,9 @@ class UserLogin(BaseModel):
 
 class UserOut(UserBase):
     id: UUID
+    profile_picture: Optional[str] = None
+    has_groq_key: Optional[bool] = False
+    has_mistral_key: Optional[bool] = False
     created_at: datetime
 
     class Config:

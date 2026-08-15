@@ -86,3 +86,80 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
         "refresh_token": create_refresh_token(subject=user.id),
         "token_type": "bearer"
     }
+
+from fastapi import UploadFile, File
+from app.api.deps import get_current_user
+from app.schemas.settings import SettingsUpdate, PasswordChange
+import uuid
+import shutil
+import os
+
+@router.get("/me", response_model=UserOut)
+def get_me(current_user: User = Depends(get_current_user)):
+    """Get profile info of current logged-in user."""
+    return current_user
+
+@router.put("/settings", response_model=UserOut)
+def update_settings(
+    settings_in: SettingsUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update user API keys."""
+    if settings_in.groq_api_key is not None:
+        current_user.groq_api_key = settings_in.groq_api_key.strip() or None
+    if settings_in.mistral_api_key is not None:
+        current_user.mistral_api_key = settings_in.mistral_api_key.strip() or None
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@router.post("/profile-picture", response_model=UserOut)
+def upload_profile_picture(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload and save user profile picture."""
+    # Ensure folder exists
+    os.makedirs("static/uploads", exist_ok=True)
+    
+    # Generate unique filename to avoid collision/caching issues
+    extension = os.path.splitext(file.filename)[1] or ".png"
+    filename = f"{current_user.id}_{uuid.uuid4().hex}{extension}"
+    file_path = f"static/uploads/{filename}"
+    
+    # Save the file locally
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # Delete old profile picture if exists
+    if current_user.profile_picture:
+        old_path = current_user.profile_picture.lstrip("/")
+        if os.path.exists(old_path):
+            try:
+                os.remove(old_path)
+            except Exception:
+                pass
+                
+    # Update DB URL
+    current_user.profile_picture = f"/static/uploads/{filename}"
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@router.post("/change-password")
+def change_password(
+    pwd_in: PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Change account password."""
+    if not verify_password(pwd_in.old_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect."
+        )
+    current_user.hashed_password = get_password_hash(pwd_in.new_password)
+    db.commit()
+    return {"message": "Password changed successfully."}

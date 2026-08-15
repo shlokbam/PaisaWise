@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, desc
 from app.core.database import get_db
@@ -13,6 +14,10 @@ from app.schemas.transaction import TransactionOut, TransactionCreate, Transacti
 from app.ai.classifier import classify_transaction_with_ai
 from typing import List, Optional
 from decimal import Decimal
+from datetime import date, timedelta, datetime
+import csv
+import io
+from fpdf import FPDF
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -106,6 +111,144 @@ def create_transaction(
     db.commit()
     db.refresh(tx)
     return tx
+
+@router.get("/export")
+def export_transactions(
+    format: str = "csv",
+    range_type: str = "month",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Export transaction list to CSV or PDF based on date range criteria.
+    Format options: 'csv', 'pdf'
+    Range type options: 'week', 'month', 'year', 'custom'
+    """
+    today = date.today()
+    query_start = None
+    query_end = today + timedelta(days=1) # include today
+    
+    if range_type == "week":
+        query_start = today - timedelta(days=7)
+    elif range_type == "month":
+        query_start = today - timedelta(days=30)
+    elif range_type == "year":
+        query_start = today - timedelta(days=365)
+    elif range_type == "custom":
+        if start_date:
+            query_start = datetime.fromisoformat(start_date).date()
+        if end_date:
+            query_end = datetime.fromisoformat(end_date).date() + timedelta(days=1)
+            
+    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
+    if query_start:
+        query = query.filter(Transaction.transaction_date >= query_start)
+    if query_end:
+        query = query.filter(Transaction.transaction_date < query_end)
+        
+    transactions = query.order_by(Transaction.transaction_date.desc()).all()
+    
+    if format == "csv":
+        # Generate CSV File
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Header row
+        writer.writerow([
+            "Date", "Merchant/Sender", "Amount (INR)", "Type", "Ownership", 
+            "Category", "Payment Method", "Status", "Confidence"
+        ])
+        
+        for tx in transactions:
+            category_name = tx.category.name if tx.category else "Uncategorized"
+            status = "Personal Spending" if tx.include_in_personal_expenses else "Excluded/Other"
+            writer.writerow([
+                tx.transaction_date.isoformat(),
+                tx.merchant_name or tx.sender or "Unknown",
+                f"{tx.amount:.2f}",
+                tx.transaction_type,
+                tx.ownership,
+                category_name,
+                tx.payment_method or "UPI",
+                status,
+                f"{int(tx.confidence * 100)}%"
+            ])
+            
+        output.seek(0)
+        filename = f"paisawise_report_{range_type}_{today.isoformat()}.csv"
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode("utf-8")),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    elif format == "pdf":
+        # Generate PDF File using fpdf2
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("helvetica", "B", 16)
+        
+        # Title Block
+        pdf.cell(0, 10, "PaisaWise Financial Statement", ln=True, align="C")
+        pdf.set_font("helvetica", "", 10)
+        pdf.cell(0, 8, f"Generated on: {today.isoformat()}", ln=True, align="C")
+        pdf.cell(0, 8, f"Statement Scope: {range_type.upper()} ({query_start or 'All'} to {query_end or 'Today'})", ln=True, align="C")
+        pdf.cell(0, 8, f"User Account: {current_user.email}", ln=True, align="C")
+        pdf.ln(10)
+        
+        # Summary Box
+        total_inflow = sum(tx.amount for tx in transactions if tx.transaction_type == "INCOME")
+        total_outflow = sum(tx.amount for tx in transactions if tx.transaction_type == "EXPENSE")
+        personal_spending = sum(tx.amount for tx in transactions if tx.include_in_personal_expenses)
+        investments = sum(tx.amount for tx in transactions if tx.transaction_type == "INVESTMENT")
+        
+        pdf.set_font("helvetica", "B", 12)
+        pdf.cell(0, 8, "Financial Summary Metrics", ln=True)
+        pdf.set_font("helvetica", "", 10)
+        pdf.cell(45, 8, f"Total Inflow: INR {total_inflow:,.2f}", border=1)
+        pdf.cell(45, 8, f"Total Outflow: INR {total_outflow:,.2f}", border=1)
+        pdf.cell(50, 8, f"Personal Spending: INR {personal_spending:,.2f}", border=1)
+        pdf.cell(50, 8, f"Investments: INR {investments:,.2f}", border=1)
+        pdf.ln(15)
+        
+        # Transaction List Table Header
+        pdf.set_font("helvetica", "B", 10)
+        pdf.cell(25, 8, "Date", border=1, align="C")
+        pdf.cell(55, 8, "Merchant/Sender", border=1)
+        pdf.cell(30, 8, "Amount (INR)", border=1, align="R")
+        pdf.cell(25, 8, "Type", border=1, align="C")
+        pdf.cell(35, 8, "Category", border=1)
+        pdf.cell(20, 8, "Personal?", border=1, align="C")
+        pdf.ln()
+        
+        # Table rows
+        pdf.set_font("helvetica", "", 9)
+        for tx in transactions:
+            category_name = tx.category.name if tx.category else "Uncategorized"
+            is_personal = "Yes" if tx.include_in_personal_expenses else "No"
+            merchant = tx.merchant_name or tx.sender or "Unknown"
+            if len(merchant) > 28:
+                merchant = merchant[:25] + "..."
+                
+            pdf.cell(25, 8, tx.transaction_date.isoformat(), border=1, align="C")
+            pdf.cell(55, 8, merchant, border=1)
+            pdf.cell(30, 8, f"{tx.amount:,.2f}", border=1, align="R")
+            pdf.cell(25, 8, tx.transaction_type, border=1, align="C")
+            pdf.cell(35, 8, category_name, border=1)
+            pdf.cell(20, 8, is_personal, border=1, align="C")
+            pdf.ln()
+            
+        filename = f"paisawise_statement_{range_type}_{today.isoformat()}.pdf"
+        pdf_bytes = pdf.output()
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    raise HTTPException(status_code=400, detail="Invalid export format. Must be 'csv' or 'pdf'.")
 
 @router.patch("/{id}", response_model=TransactionOut)
 def update_transaction(

@@ -9,9 +9,10 @@ import { Subscriptions } from "./pages/Subscriptions";
 import { Rules } from "./pages/Rules";
 import { Analytics } from "./pages/Analytics";
 import { AIChat } from "./pages/AIChat";
+import { Settings } from "./pages/Settings";
 import { 
   LayoutDashboard, ListTodo, ShieldAlert, BadgeDollarSign, 
-  CreditCard, ToggleLeft, BarChart3, Sparkles, LogOut, Menu, X 
+  CreditCard, ToggleLeft, BarChart3, Sparkles, LogOut, Menu, X, Settings as SettingsIcon 
 } from "lucide-react";
 
 const AppContent: React.FC = () => {
@@ -40,6 +41,7 @@ const AppContent: React.FC = () => {
     { id: "rules", label: "Automation Rules", icon: ToggleLeft },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "ai", label: "AI Chat Assistant", icon: Sparkles },
+    { id: "settings", label: "Settings", icon: SettingsIcon },
   ];
 
   const renderContent = () => {
@@ -52,6 +54,7 @@ const AppContent: React.FC = () => {
       case "rules": return <Rules />;
       case "analytics": return <Analytics />;
       case "ai": return <AIChat />;
+      case "settings": return <Settings />;
       default: return <Dashboard setTab={setActiveTab} />;
     }
   };

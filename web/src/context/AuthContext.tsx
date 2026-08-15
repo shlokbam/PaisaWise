@@ -5,6 +5,9 @@ interface User {
   email: string;
   first_name?: string;
   id: string;
+  profile_picture?: string;
+  has_groq_key?: boolean;
+  has_mistral_key?: boolean;
 }
 
 interface AuthContextType {
@@ -14,6 +17,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   registerUser: (email: string, password: string, firstName: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +25,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshUser = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+      const userData = await apiRequest("/auth/me");
+      setUser(userData);
+    } catch (err) {
+      console.error("Refresh user profile failed", err);
+    }
+  };
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -30,13 +45,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       try {
-        // Find user by calling dashboard or custom profile route.
-        // We call GET /dashboard. It returns period, personal spending, etc., which works as a verification.
-        // We can define a tiny helper on backend, but let's just parse the JWT sub locally for speed!
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        setUser({ id: payload.sub, email: "shlok@paisawise.com", first_name: "Shlok" });
+        const userData = await apiRequest("/auth/me");
+        setUser(userData);
       } catch (err) {
-        console.error("Token decoding failed", err);
+        console.error("Fetch current user failed", err);
         logout();
       } finally {
         setLoading(false);
@@ -56,8 +68,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
       
-      const payload = JSON.parse(atob(data.access_token.split(".")[1]));
-      setUser({ id: payload.sub, email, first_name: email.split("@")[0].toUpperCase() });
+      const userData = await apiRequest("/auth/me");
+      setUser(userData);
     } catch (err) {
       setLoading(false);
       throw err;
@@ -98,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         registerUser,
+        refreshUser,
       }}
     >
       {children}

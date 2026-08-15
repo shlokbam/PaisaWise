@@ -41,6 +41,13 @@ app.include_router(analytics.router, prefix=settings.API_V1_STR)
 app.include_router(mobile.router, prefix=settings.API_V1_STR)
 app.include_router(ai.router, prefix=settings.API_V1_STR)
 
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Ensure static directories exist
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to PaisaWise API", "version": "1.0.0"}
