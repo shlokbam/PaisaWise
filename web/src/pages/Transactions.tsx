@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { apiRequest } from "../services/api";
 import { 
-  Search, Edit3, Check, X 
+  Search, Edit3, Check, X, Plus 
 } from "lucide-react";
 
 interface Category {
@@ -43,6 +43,56 @@ export const Transactions: React.FC = () => {
   const [editType, setEditType] = useState("");
   const [editCategory, setEditCategory] = useState("");
   const [editInclude, setEditInclude] = useState(false);
+
+  // Manual Entry Form Fields
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addAmount, setAddAmount] = useState("");
+  const [addMerchant, setAddMerchant] = useState("");
+  const [addType, setAddType] = useState("EXPENSE");
+  const [addOwnership, setAddOwnership] = useState("PERSONAL");
+  const [addCategory, setAddCategory] = useState("");
+  const [addPaymentMethod, setAddPaymentMethod] = useState("CASH");
+  const [addInclude, setAddInclude] = useState(true);
+  const [addDate, setAddDate] = useState(new Date().toISOString().split("T")[0]);
+  const [addDesc, setAddDesc] = useState("");
+  const [addLoading, setAddLoading] = useState(false);
+
+  const handleAddTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddLoading(true);
+    try {
+      await apiRequest("/transactions", {
+        method: "POST",
+        body: JSON.stringify({
+          amount: parseFloat(addAmount),
+          currency: "INR",
+          direction: addType === "INCOME" ? "CREDIT" : "DEBIT",
+          transaction_date: addDate || new Date().toISOString().split("T")[0],
+          merchant_name: addMerchant,
+          payment_method: addPaymentMethod,
+          description: addDesc || undefined,
+          ownership: addOwnership,
+          transaction_type: addType,
+          category_id: addCategory || undefined,
+          include_in_personal_expenses: addType === "EXPENSE" && addOwnership === "PERSONAL" ? addInclude : false
+        })
+      });
+      setShowAddModal(false);
+      setAddAmount("");
+      setAddMerchant("");
+      setAddType("EXPENSE");
+      setAddOwnership("PERSONAL");
+      setAddCategory("");
+      setAddPaymentMethod("CASH");
+      setAddDesc("");
+      setAddDate(new Date().toISOString().split("T")[0]);
+      fetchTransactions();
+    } catch (err: any) {
+      alert(err.message || "Failed to add transaction.");
+    } finally {
+      setAddLoading(false);
+    }
+  };
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -122,9 +172,17 @@ export const Transactions: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-white">Financial Ledger</h2>
-        <p className="text-dark-muted text-sm mt-0.5">Manage and verify all transaction classifications</p>
+      <div className="flex justify-between items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Financial Ledger</h2>
+          <p className="text-dark-muted text-sm mt-0.5">Manage and verify all transaction classifications</p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="premium-btn py-2 text-xs shrink-0"
+        >
+          <Plus size={14} /> Record Manual/Cash
+        </button>
       </div>
 
       {/* Filter and Search Bar */}
@@ -304,6 +362,179 @@ export const Transactions: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Add Transaction Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-lg p-6 space-y-4">
+            <div className="flex justify-between items-center border-b border-dark-border pb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Plus size={18} className="text-dark-accent" />
+                <span>Record Manual Transaction</span>
+              </h3>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="text-dark-muted hover:text-white p-1 hover:bg-dark-hover/40 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddTransaction} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Amount */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-dark-muted">Amount (INR) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="0.00"
+                    value={addAmount}
+                    onChange={(e) => setAddAmount(e.target.value)}
+                    className="w-full glass-input py-2 text-xs"
+                  />
+                </div>
+
+                {/* Date */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-dark-muted">Transaction Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={addDate}
+                    onChange={(e) => setAddDate(e.target.value)}
+                    className="w-full glass-input py-1.5 text-xs text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Merchant / Entity */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-dark-muted">Merchant / Entity / Sender *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Cash Expense, Chai Stall, Friend Amit"
+                  value={addMerchant}
+                  onChange={(e) => setAddMerchant(e.target.value)}
+                  className="w-full glass-input py-2 text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Type */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-dark-muted">Transaction Type</label>
+                  <select
+                    value={addType}
+                    onChange={(e) => setAddType(e.target.value)}
+                    className="w-full glass-input py-2 text-xs"
+                  >
+                    <option value="EXPENSE" className="bg-dark-card text-white">Expense (Debit)</option>
+                    <option value="INCOME" className="bg-dark-card text-white">Income (Credit)</option>
+                    <option value="INVESTMENT" className="bg-dark-card text-white">Investment (SIP/IPO)</option>
+                    <option value="TRANSFER" className="bg-dark-card text-white">Self Transfer</option>
+                    <option value="SETTLEMENT" className="bg-dark-card text-white">Settlement</option>
+                  </select>
+                </div>
+
+                {/* Ownership */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-dark-muted">Ownership</label>
+                  <select
+                    value={addOwnership}
+                    onChange={(e) => setAddOwnership(e.target.value)}
+                    className="w-full glass-input py-2 text-xs"
+                  >
+                    <option value="PERSONAL" className="bg-dark-card text-white">Personal</option>
+                    <option value="FAMILY" className="bg-dark-card text-white">Family</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Category */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-dark-muted">Category</label>
+                  <select
+                    value={addCategory}
+                    onChange={(e) => setAddCategory(e.target.value)}
+                    className="w-full glass-input py-2 text-xs"
+                  >
+                    <option value="" className="bg-dark-card text-white">Uncategorized</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id} className="bg-dark-card text-white">
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Payment Method */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-dark-muted">Payment Method</label>
+                  <select
+                    value={addPaymentMethod}
+                    onChange={(e) => setAddPaymentMethod(e.target.value)}
+                    className="w-full glass-input py-2 text-xs"
+                  >
+                    <option value="CASH" className="bg-dark-card text-white">Cash</option>
+                    <option value="UPI" className="bg-dark-card text-white">UPI (GPay/PhonePe)</option>
+                    <option value="CARD" className="bg-dark-card text-white">Debit/Credit Card</option>
+                    <option value="NETBANKING" className="bg-dark-card text-white">NetBanking</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-dark-muted">Description (Notes)</label>
+                <input
+                  type="text"
+                  placeholder="Additional context/notes..."
+                  value={addDesc}
+                  onChange={(e) => setAddDesc(e.target.value)}
+                  className="w-full glass-input py-2 text-xs"
+                />
+              </div>
+
+              {/* Include in Personal Spending Toggle */}
+              {addType === "EXPENSE" && addOwnership === "PERSONAL" && (
+                <div className="flex items-center gap-2 pt-2">
+                  <input
+                    type="checkbox"
+                    id="addInclude"
+                    checked={addInclude}
+                    onChange={(e) => setAddInclude(e.target.checked)}
+                    className="rounded bg-dark-bg border-dark-border text-dark-accent focus:ring-dark-accent"
+                  />
+                  <label htmlFor="addInclude" className="text-xs text-dark-muted cursor-pointer select-none">
+                    Include in Personal Spending Calculations
+                  </label>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-4 border-t border-dark-border">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 premium-btn-secondary py-2.5 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addLoading}
+                  className="flex-1 premium-btn py-2.5 text-xs"
+                >
+                  {addLoading ? "Saving..." : "Save Transaction"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
