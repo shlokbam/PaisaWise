@@ -35,11 +35,14 @@ export const Login: React.FC = () => {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-glow"></div>
 
       <div className="w-full max-w-md glass-panel p-8 relative z-10">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
-            <span className="text-dark-accent">Paisa</span>Wise
-          </h1>
-          <p className="text-dark-muted mt-2 text-sm">"Spend smart. Know more."</p>
+        <div className="text-center mb-8 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-3 mb-1">
+            <img src="/logo.png" alt="PaisaWise Logo" className="w-12 h-12 object-contain rounded-xl" />
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              <span className="text-dark-accent mr-[2px]">Paisa</span>Wise
+            </h1>
+          </div>
+          <p className="text-dark-muted text-sm mt-1">"Spend smart. Know more."</p>
         </div>
 
         {error && (

@@ -3,6 +3,7 @@ import { apiRequest } from "../services/api";
 import { 
   Search, Edit3, Check, X, Plus 
 } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 interface Category {
   id: string;
@@ -31,6 +32,7 @@ interface Transaction {
 }
 
 export const Transactions: React.FC = () => {
+  const { showToast } = useToast();
   const [txs, setTxs] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ export const Transactions: React.FC = () => {
       setAddDate(new Date().toISOString().split("T")[0]);
       fetchTransactions();
     } catch (err: any) {
-      alert(err.message || "Failed to add transaction.");
+      showToast(err.message || "Failed to add transaction.", "error");
     } finally {
       setAddLoading(false);
     }
@@ -156,7 +158,7 @@ export const Transactions: React.FC = () => {
       setEditingId(null);
       fetchTransactions();
     } catch (err) {
-      alert("Failed to save changes.");
+      showToast("Failed to save changes.", "error");
     }
   };
 
@@ -324,7 +326,7 @@ export const Transactions: React.FC = () => {
                         className="w-4 h-4 rounded text-dark-accent bg-dark-bg border-dark-border focus:ring-dark-accent"
                       />
                     ) : (
-                      <span className={`inline-block w-4 h-4 rounded-full ${
+                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
                         tx.include_in_personal_expenses ? "bg-semantic-income/20 text-semantic-income" : "bg-dark-hover text-dark-muted"
                       }`}>
                         {tx.include_in_personal_expenses ? "✓" : "✗"}

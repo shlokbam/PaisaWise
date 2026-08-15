@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../services/api";
+import { useToast } from "../context/ToastContext";
 import { 
   Lock, Sparkles, Key, Eye, EyeOff, 
   Upload, CheckCircle, AlertTriangle, FileSpreadsheet, FileText, Download 
@@ -8,6 +9,7 @@ import {
 
 export const Settings: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const { showToast } = useToast();
   
   // State for API Keys
   const [groqKey, setGroqKey] = useState("");
@@ -53,7 +55,7 @@ export const Settings: React.FC = () => {
       setMistralKey("");
       await refreshUser();
     } catch (err: any) {
-      alert(err.message || "Failed to update API Keys.");
+      showToast(err.message || "Failed to update API Keys.", "error");
     } finally {
       setKeysLoading(false);
     }
@@ -119,7 +121,7 @@ export const Settings: React.FC = () => {
       let url = `http://localhost:8000/api/v1/transactions/export?format=${exportFormat}&range_type=${exportRange}`;
       if (exportRange === "custom") {
         if (!startDate || !endDate) {
-          alert("Please specify start and end dates.");
+          showToast("Please specify start and end dates.", "warning");
           return;
         }
         url += `&start_date=${startDate}&end_date=${endDate}`;
@@ -146,7 +148,7 @@ export const Settings: React.FC = () => {
       link.click();
       link.remove();
     } catch (err: any) {
-      alert(err.message || "Failed to download statement.");
+      showToast(err.message || "Failed to download statement.", "error");
     } finally {
       setExportLoading(false);
     }

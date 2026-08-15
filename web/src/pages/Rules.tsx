@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { apiRequest } from "../services/api";
 import { Plus, ToggleLeft, ToggleRight, Trash2, RefreshCw } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 interface Category {
   id: string;
@@ -26,6 +27,7 @@ interface Rule {
 }
 
 export const Rules: React.FC = () => {
+  const { showToast } = useToast();
   const [rules, setRules] = useState<Rule[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export const Rules: React.FC = () => {
   const handleCreateRule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || (!merchantPattern && !upiPattern)) {
-      alert("Please provide a name and at least one search pattern (merchant or UPI).");
+      showToast("Please provide a name and at least one search pattern.", "warning");
       return;
     }
 
@@ -96,7 +98,7 @@ export const Rules: React.FC = () => {
       setShowAddForm(false);
       fetchRules();
     } catch (err) {
-      alert("Failed to create rule.");
+      showToast("Failed to create rule.", "error");
     }
   };
 
@@ -108,17 +110,17 @@ export const Rules: React.FC = () => {
       });
       fetchRules();
     } catch (err) {
-      alert("Failed to update rule status.");
+      showToast("Failed to update rule status.", "error");
     }
   };
 
   const handleDeleteRule = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this automation rule?")) return;
     try {
       await apiRequest(`/rules/${id}`, { method: "DELETE" });
       fetchRules();
+      showToast("Automation rule deleted successfully.", "success");
     } catch (err) {
-      alert("Failed to delete rule.");
+      showToast("Failed to delete rule.", "error");
     }
   };
 

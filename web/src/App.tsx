@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ToastProvider } from "./context/ToastContext";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Transactions } from "./pages/Transactions";
@@ -77,7 +78,7 @@ const AppContent: React.FC = () => {
           {/* Logo Brand */}
           <div className="p-6 border-b border-dark-border flex items-center justify-between">
             <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span className="text-dark-accent">Paisa</span>Wise
+              <span><span className="text-dark-accent mr-[2px]">Paisa</span>Wise</span>
             </h1>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-dark-muted hover:text-white">
               <X size={20} />
@@ -135,7 +136,7 @@ const AppContent: React.FC = () => {
         {/* Header (Mobile nav indicator) */}
         <header className="lg:hidden p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between">
           <h1 className="text-lg font-bold tracking-tight text-white">
-            <span className="text-dark-accent">Paisa</span>Wise
+            <span className="text-dark-accent mr-[2px]">Paisa</span>Wise
           </h1>
           <button onClick={() => setSidebarOpen(true)} className="text-dark-muted hover:text-white">
             <Menu size={22} />
@@ -154,7 +155,9 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </AuthProvider>
   );
 };

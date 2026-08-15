@@ -99,17 +99,76 @@ def get_me(current_user: User = Depends(get_current_user)):
     """Get profile info of current logged-in user."""
     return current_user
 
+def validate_groq_key(key: str) -> bool:
+    try:
+        headers = {"Authorization": f"Bearer {key.strip()}"}
+        resp = httpx.get("https://api.groq.com/openai/v1/models", headers=headers, timeout=5.0)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+def validate_mistral_key(key: str) -> bool:
+    try:
+        headers = {"Authorization": f"Bearer {key.strip()}"}
+        resp = httpx.get("https://api.mistral.ai/v1/models", headers=headers, timeout=5.0)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+import httpx
+
 @router.put("/settings", response_model=UserOut)
 def update_settings(
     settings_in: SettingsUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update user API keys."""
-    if settings_in.groq_api_key is not None:
-        current_user.groq_api_key = settings_in.groq_api_key.strip() or None
-    if settings_in.mistral_api_key is not None:
-        current_user.mistral_api_key = settings_in.mistral_api_key.strip() or None
+    """Update user API keys with active validation verification."""
+    groq_in = settings_in.groq_api_key
+    mistral_in = settings_in.mistral_api_key
+    
+    # If both inputs are unset (None), nothing to change
+    if groq_in is None and mistral_in is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No configuration was submitted."
+        )
+        
+    validation_failures = []
+    updated_something = False
+    
+    # 1. Process Groq API Key
+    if groq_in is not None:
+        if groq_in.strip() == "":
+            current_user.groq_api_key = None
+            updated_something = True
+        else:
+            if validate_groq_key(groq_in):
+                current_user.groq_api_key = groq_in.strip()
+                updated_something = True
+            else:
+                validation_failures.append("Groq API key failed authentication check.")
+                
+    # 2. Process Mistral API Key
+    if mistral_in is not None:
+        if mistral_in.strip() == "":
+            current_user.mistral_api_key = None
+            updated_something = True
+        else:
+            if validate_mistral_key(mistral_in):
+                current_user.mistral_api_key = mistral_in.strip()
+                updated_something = True
+            else:
+                validation_failures.append("Mistral API key failed authentication check.")
+                
+    # Check if at least one operation succeeded
+    if not updated_something:
+        error_detail = " | ".join(validation_failures) or "All submitted API keys are invalid."
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_detail
+        )
+        
     db.commit()
     db.refresh(current_user)
     return current_user

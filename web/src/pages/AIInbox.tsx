@@ -3,6 +3,7 @@ import { apiRequest } from "../services/api";
 import { 
   Sparkles, Check, RefreshCw, Plus, CheckCircle2, Edit3 
 } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 interface Category {
   id: string;
@@ -38,6 +39,7 @@ interface RuleSuggestion {
 }
 
 export const AIInbox: React.FC = () => {
+  const { showToast } = useToast();
   const [txs, setTxs] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ export const AIInbox: React.FC = () => {
         setActiveSuggestion(res.rule_suggestion);
       }
     } catch (err) {
-      alert("Failed to confirm transaction.");
+      showToast("Failed to confirm transaction.", "error");
     }
   };
 
@@ -127,7 +129,7 @@ export const AIInbox: React.FC = () => {
         setActiveSuggestion(res.rule_suggestion);
       }
     } catch (err) {
-      alert("Failed to save changes.");
+      showToast("Failed to save changes.", "error");
     }
   };
 
@@ -139,9 +141,9 @@ export const AIInbox: React.FC = () => {
         body: JSON.stringify(activeSuggestion)
       });
       setActiveSuggestion(null);
-      alert("Rule created successfully! Future matching transactions will be classified automatically.");
+      showToast("Rule created successfully! Matching transactions will auto-classify.", "success");
     } catch (err) {
-      alert("Failed to create rule.");
+      showToast("Failed to create rule.", "error");
     }
   };
 

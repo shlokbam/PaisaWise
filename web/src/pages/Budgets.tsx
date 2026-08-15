@@ -3,6 +3,7 @@ import { apiRequest } from "../services/api";
 import { 
   Plus, RefreshCw, AlertTriangle 
 } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 interface Category {
   id: string;
@@ -21,6 +22,7 @@ interface BudgetStatus {
 }
 
 export const Budgets: React.FC = () => {
+  const { showToast } = useToast();
   const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +82,7 @@ export const Budgets: React.FC = () => {
       setShowAddForm(false);
       fetchBudgets();
     } catch (err) {
-      alert("Failed to save budget.");
+      showToast("Failed to save budget.", "error");
     }
   };
 
