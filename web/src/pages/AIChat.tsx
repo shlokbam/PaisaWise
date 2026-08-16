@@ -315,10 +315,10 @@ export const AIChat: React.FC = () => {
             </div>
             
             {/* Message box */}
-            <div className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm leading-relaxed border shadow-premium min-w-0 flex-1 break-words overflow-hidden ${
+            <div className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm leading-relaxed border shadow-premium flex-1 min-w-0 max-w-full overflow-hidden break-words ${
               msg.role === "user" 
-                ? "bg-dark-accent/10 border-dark-accent/20 text-white rounded-tr-none max-w-[85%]" 
-                : "bg-dark-card/90 border-dark-border text-dark-text rounded-tl-none max-w-[90%] sm:max-w-full"
+                ? "bg-dark-accent/10 border-dark-accent/20 text-white rounded-tr-none" 
+                : "bg-dark-card/90 border-dark-border text-dark-text rounded-tl-none"
             }`}>
               {msg.role === "user" ? (
                 <p className="text-white text-xs sm:text-sm break-words">{msg.content}</p>
