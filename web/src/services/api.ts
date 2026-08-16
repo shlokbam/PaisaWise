@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 
-// Web browser uses 127.0.0.1, Android native app connects to Mac LAN IP (192.168.1.6)
+// Web browser uses env variable or 127.0.0.1, Android native app connects to live Render backend cloud
 const envUrl = import.meta.env.VITE_API_BASE_URL;
 
 function getApiBaseUrl(): string {
@@ -8,7 +8,7 @@ function getApiBaseUrl(): string {
     if (envUrl && !envUrl.includes("127.0.0.1") && !envUrl.includes("localhost")) {
       return envUrl;
     }
-    return "http://192.168.1.6:8000/api/v1";
+    return "https://paisawise-api.onrender.com/api/v1";
   }
   return envUrl || "http://127.0.0.1:8000/api/v1";
 }
