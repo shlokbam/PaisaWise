@@ -15,11 +15,13 @@ function getApiBaseUrl(): string {
 
 const API_BASE_URL = getApiBaseUrl();
 
+import { getAuthToken, clearAuthTokens } from './storage';
+
 export async function apiRequest(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<any> {
-  const token = localStorage.getItem("access_token");
+  const token = await getAuthToken();
   
   const headers = new Headers(options.headers || {});
   if (token && !headers.has("Authorization")) {
@@ -35,9 +37,7 @@ export async function apiRequest(
   });
 
   if (response.status === 401) {
-    // If unauthorized, clean up and redirect to login
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    await clearAuthTokens();
     if (!window.location.pathname.includes("/login")) {
       window.location.href = "/login";
     }

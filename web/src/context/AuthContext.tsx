@@ -22,13 +22,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+import { getAuthToken, setAuthToken, clearAuthTokens } from "../services/storage";
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = await getAuthToken();
       if (!token) return;
       const userData = await apiRequest("/auth/me");
       setUser(userData);
@@ -39,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
-      const token = localStorage.getItem("access_token");
+      const token = await getAuthToken();
       if (!token) {
         setLoading(false);
         return;
@@ -47,9 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const userData = await apiRequest("/auth/me");
         setUser(userData);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Fetch current user failed", err);
-        logout();
+        // Only clear tokens if server explicitly returns 401 Unauthorized
+        if (err.message && err.message.includes("Session expired")) {
+          await clearAuthTokens();
+          setUser(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -65,8 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("refresh_token", data.refresh_token);
+      await setAuthToken(data.access_token, data.refresh_token);
       
       const userData = await apiRequest("/auth/me");
       setUser(userData);
@@ -85,7 +90,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         method: "POST",
         body: JSON.stringify({ email, password, first_name: firstName }),
       });
-      // Automatically login after register
       await login(email, password);
     } catch (err) {
       setLoading(false);
@@ -95,9 +99,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+  const logout = async () => {
+    await clearAuthTokens();
     setUser(null);
   };
 
