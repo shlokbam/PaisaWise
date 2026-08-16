@@ -21,7 +21,7 @@
 
 Get the pre-compiled native Android app directly from this repository:
 
-📥 **[Download Latest PaisaWise Android APK (app-debug.apk)](web/android/app/build/outputs/apk/debug/app-debug.apk)**
+📥 **[Download Latest PaisaWise Android APK (app-debug.apk)](https://github.com/shlokbam/PaisaWise/raw/main/apk/app-debug.apk)**
 
 > ⚡ **Features in latest APK:** Real-Time Background SMS Listener, Instant Push Notifications (`🔔 PaisaWise Auto-Sync`), Incremental Timestamp Memory, 1-Click Exclude/Delete in AI Inbox, and Mobile Responsive UI!
 
