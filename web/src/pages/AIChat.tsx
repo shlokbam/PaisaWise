@@ -269,7 +269,7 @@ export const AIChat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col flex-1 h-[calc(100vh-12rem)] sm:h-[calc(100vh-7rem)] md:h-[calc(100vh-6rem)] glass-panel overflow-hidden w-full max-w-full min-w-0">
+    <div className="flex flex-col flex-1 h-[calc(100vh-7.5rem)] sm:h-[calc(100vh-6.5rem)] md:h-[calc(100vh-6rem)] glass-panel overflow-hidden w-full max-w-full min-w-0">
       {/* AI Chat Header */}
       <div className="p-2.5 sm:p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between shrink-0 w-full min-w-0">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">

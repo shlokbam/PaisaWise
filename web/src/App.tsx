@@ -154,39 +154,9 @@ const AppContent: React.FC = () => {
         </header>
 
         {/* Dynamic page content */}
-        <main className={`flex-1 ${activeTab === "ai" ? "p-2 sm:p-4 md:p-8 flex flex-col pb-20 lg:pb-8" : "p-3 sm:p-4 md:p-8 pb-24 lg:pb-8"} max-w-7xl w-full max-w-full mx-auto overflow-y-auto min-w-0`}>
+        <main className={`flex-1 ${activeTab === "ai" ? "p-2 sm:p-4 md:p-8 flex flex-col" : "p-3 sm:p-4 md:p-8 pb-[max(1rem,env(safe-area-inset-bottom))]"} max-w-7xl w-full max-w-full mx-auto overflow-y-auto min-w-0`}>
           {renderContent()}
         </main>
-
-        {/* Mobile Bottom Navigation Bar (Fixed with bottom safe area) */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-dark-card/95 backdrop-blur-xl border-t border-dark-border pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] px-2 shadow-2xl">
-          <div className="grid grid-cols-5 gap-1 max-w-md mx-auto">
-            {[
-              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-              { id: "ai-inbox", label: "Inbox", icon: ShieldAlert },
-              { id: "transactions", label: "Ledger", icon: ListTodo },
-              { id: "ai", label: "AI Chat", icon: Sparkles },
-              { id: "settings", label: "Settings", icon: SettingsIcon },
-            ].map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
-                    isActive
-                      ? "text-dark-accent bg-dark-accent/15 border border-dark-accent/30 font-bold"
-                      : "text-dark-muted hover:text-white hover:bg-dark-hover/30 font-medium"
-                  }`}
-                >
-                  <Icon size={18} className={isActive ? "text-dark-accent" : ""} />
-                  <span className="text-[10px] mt-1 truncate max-w-full">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
       </div>
     </div>
   );
