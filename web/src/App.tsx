@@ -135,24 +135,58 @@ const AppContent: React.FC = () => {
       </aside>
 
       {/* Main Panel Content wrapper */}
-      <div className="flex-1 flex flex-col min-h-screen lg:pl-64 w-full max-w-full overflow-x-hidden min-w-0">
-        {/* Header (Mobile nav indicator) */}
-        <header className="lg:hidden p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between shrink-0">
+      <div className="flex-1 flex flex-col min-h-screen lg:pl-64 w-full max-w-full overflow-x-hidden min-w-0 relative">
+        {/* Top Header (Mobile nav indicator & sticky with top safe area) */}
+        <header className="lg:hidden pt-[max(0.75rem,env(safe-area-inset-top))] px-4 pb-3 border-b border-dark-border bg-dark-card/95 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="PaisaWise Logo" className="w-7 h-7 object-contain rounded-md" />
             <h1 className="text-lg font-bold tracking-tight text-white">
               <span className="text-dark-accent mr-[2px]">Paisa</span>Wise
             </h1>
           </div>
-          <button onClick={() => setSidebarOpen(true)} className="text-dark-muted hover:text-white p-1">
-            <Menu size={22} />
+          <button 
+            onClick={() => setSidebarOpen(true)} 
+            className="text-dark-muted hover:text-white p-1.5 rounded-lg bg-dark-hover/40 border border-dark-border/60 flex items-center gap-1.5 text-xs font-semibold"
+          >
+            <Menu size={18} />
+            <span className="hidden xs:inline">All Menu</span>
           </button>
         </header>
 
         {/* Dynamic page content */}
-        <main className={`flex-1 ${activeTab === "ai" ? "p-2 sm:p-4 md:p-8 flex flex-col" : "p-3 sm:p-4 md:p-8"} max-w-7xl w-full max-w-full mx-auto overflow-y-auto min-w-0`}>
+        <main className={`flex-1 ${activeTab === "ai" ? "p-2 sm:p-4 md:p-8 flex flex-col pb-20 lg:pb-8" : "p-3 sm:p-4 md:p-8 pb-24 lg:pb-8"} max-w-7xl w-full max-w-full mx-auto overflow-y-auto min-w-0`}>
           {renderContent()}
         </main>
+
+        {/* Mobile Bottom Navigation Bar (Fixed with bottom safe area) */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-dark-card/95 backdrop-blur-xl border-t border-dark-border pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] px-2 shadow-2xl">
+          <div className="grid grid-cols-5 gap-1 max-w-md mx-auto">
+            {[
+              { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+              { id: "ai-inbox", label: "Inbox", icon: ShieldAlert },
+              { id: "transactions", label: "Ledger", icon: ListTodo },
+              { id: "ai", label: "AI Chat", icon: Sparkles },
+              { id: "settings", label: "Settings", icon: SettingsIcon },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+                    isActive
+                      ? "text-dark-accent bg-dark-accent/15 border border-dark-accent/30 font-bold"
+                      : "text-dark-muted hover:text-white hover:bg-dark-hover/30 font-medium"
+                  }`}
+                >
+                  <Icon size={18} className={isActive ? "text-dark-accent" : ""} />
+                  <span className="text-[10px] mt-1 truncate max-w-full">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
       </div>
     </div>
   );
