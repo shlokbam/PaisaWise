@@ -27,6 +27,7 @@ def get_transactions(
     type: Optional[str] = None,
     include: Optional[bool] = None,
     needs_review: Optional[bool] = None,
+    category_id: Optional[str] = None,
     search: Optional[str] = None,
     page: int = 1,
     limit: int = 50,
@@ -39,6 +40,8 @@ def get_transactions(
     """
     query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
     
+    if category_id:
+        query = query.filter(Transaction.category_id == category_id)
     if ownership:
         query = query.filter(Transaction.ownership == ownership.upper())
     if type:
