@@ -43,6 +43,17 @@ app.include_router(ai.router, prefix=settings.API_V1_STR)
 
 from fastapi.staticfiles import StaticFiles
 import os
+from app.core.database import engine, Base
+
+# Create tables and seed data on startup
+@app.on_event("startup")
+def on_startup():
+    try:
+        Base.metadata.create_all(bind=engine)
+        from init_db import init_database
+        init_database()
+    except Exception as e:
+        print(f"Startup DB initialization notice: {e}")
 
 # Ensure static directories exist
 os.makedirs("static/uploads", exist_ok=True)
@@ -50,4 +61,4 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to PaisaWise API", "version": "1.0.0"}
+    return {"message": "Welcome to PaisaWise API", "status": "online", "version": "1.0.0"}
