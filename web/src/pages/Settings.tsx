@@ -48,6 +48,9 @@ export const Settings: React.FC = () => {
   const [smsSyncing, setSmsSyncing] = useState(false);
   const [smsSyncResult, setSmsSyncResult] = useState<{ sent: number; skipped: number } | null>(null);
   const [lastSyncTime, setLastSyncState] = useState<number>(0);
+  const [smsSyncMode, setSmsSyncMode] = useState<"incremental" | "range" | "all">("incremental");
+  const [smsStartDate, setSmsStartDate] = useState("");
+  const [smsEndDate, setSmsEndDate] = useState("");
   const isAndroid = isNativeAndroid();
 
   useEffect(() => {
@@ -72,8 +75,24 @@ export const Settings: React.FC = () => {
     setSmsSyncing(true);
     setSmsSyncResult(null);
     try {
-      const sinceTime = await getLastSyncTime();
-      const allMessages = await readAllSms(1000, sinceTime);
+      let sinceTime = 0;
+      let untilTime = 0;
+
+      if (smsSyncMode === "incremental") {
+        sinceTime = await getLastSyncTime();
+      } else if (smsSyncMode === "range") {
+        if (smsStartDate) {
+          sinceTime = new Date(`${smsStartDate}T00:00:00`).getTime();
+        }
+        if (smsEndDate) {
+          untilTime = new Date(`${smsEndDate}T23:59:59.999`).getTime();
+        }
+      } else if (smsSyncMode === "all") {
+        sinceTime = 0;
+        untilTime = 0;
+      }
+
+      const allMessages = await readAllSms(1000, sinceTime, untilTime);
       const bankMessages = filterBankSms(allMessages);
       let sent = 0;
       let skipped = 0;
@@ -84,7 +103,6 @@ export const Settings: React.FC = () => {
             body: JSON.stringify({ sender: msg.sender, body: msg.body, date: msg.date }),
           });
           if (res) {
-            // Check if created_at and updated_at match or if backend flagged duplicate
             if (res.source_message_hash) {
               sent++;
             } else {
@@ -102,7 +120,7 @@ export const Settings: React.FC = () => {
       setLastSyncState(now);
 
       setSmsSyncResult({ sent, skipped });
-      showToast(`Synced ${sent} new bank messages successfully!`, "success");
+      showToast(`Synced ${sent} bank messages for selected range! (${skipped} skipped/duplicate)`, "success");
     } catch (err: any) {
       showToast(err.message || "SMS sync failed.", "error");
     } finally {
@@ -567,12 +585,120 @@ export const Settings: React.FC = () => {
                 </div>
               </div>
 
+              {/* Sync Scope Selection */}
+              <div className="space-y-3 mb-5">
+                <label className="text-xs font-semibold text-dark-muted block">Sync Scope & Date Range</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSmsSyncMode("incremental")}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                      smsSyncMode === "incremental"
+                        ? "bg-dark-accent/15 border-dark-accent text-white"
+                        : "bg-dark-hover/30 border-dark-border text-dark-muted hover:text-white"
+                    }`}
+                  >
+                    ⚡ Incremental
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSmsSyncMode("range")}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                      smsSyncMode === "range"
+                        ? "bg-dark-accent/15 border-dark-accent text-white"
+                        : "bg-dark-hover/30 border-dark-border text-dark-muted hover:text-white"
+                    }`}
+                  >
+                    📅 Date Range
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSmsSyncMode("all")}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                      smsSyncMode === "all"
+                        ? "bg-dark-accent/15 border-dark-accent text-white"
+                        : "bg-dark-hover/30 border-dark-border text-dark-muted hover:text-white"
+                    }`}
+                  >
+                    📂 All History
+                  </button>
+                </div>
+
+                {/* Date Range Inputs when Date Range mode selected */}
+                {smsSyncMode === "range" && (
+                  <div className="p-4 rounded-xl border border-dark-border bg-dark-bg/30 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-semibold text-dark-muted">
+                      <span>Select Date Window</span>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const now = new Date().toISOString().split("T")[0];
+                            setSmsStartDate(now);
+                            setSmsEndDate(now);
+                          }}
+                          className="px-2 py-0.5 rounded bg-dark-accent/10 border border-dark-accent/20 text-dark-accent hover:bg-dark-accent/20 text-[10px]"
+                        >
+                          Today
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const end = new Date().toISOString().split("T")[0];
+                            const start = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+                            setSmsStartDate(start);
+                            setSmsEndDate(end);
+                          }}
+                          className="px-2 py-0.5 rounded bg-dark-accent/10 border border-dark-accent/20 text-dark-accent hover:bg-dark-accent/20 text-[10px]"
+                        >
+                          7 Days
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const d = new Date();
+                            const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0];
+                            const end = new Date().toISOString().split("T")[0];
+                            setSmsStartDate(start);
+                            setSmsEndDate(end);
+                          }}
+                          className="px-2 py-0.5 rounded bg-dark-accent/10 border border-dark-accent/20 text-dark-accent hover:bg-dark-accent/20 text-[10px]"
+                        >
+                          This Month
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] text-dark-muted block mb-1">From Date</label>
+                        <input
+                          type="date"
+                          value={smsStartDate}
+                          onChange={(e) => setSmsStartDate(e.target.value)}
+                          className="w-full glass-input py-1.5 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-dark-muted block mb-1">To Date</label>
+                        <input
+                          type="date"
+                          value={smsEndDate}
+                          onChange={(e) => setSmsEndDate(e.target.value)}
+                          className="w-full glass-input py-1.5 text-xs text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Sync Result */}
               {smsSyncResult && (
                 <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
                   <CheckCircle size={16} />
                   <span>
-                    Imported <strong>{smsSyncResult.sent}</strong> new bank transactions
+                    Imported <strong>{smsSyncResult.sent}</strong> bank transactions
                     {smsSyncResult.skipped > 0 && ` (${smsSyncResult.skipped} skipped as duplicates)`}
                   </span>
                 </div>
@@ -594,14 +720,16 @@ export const Settings: React.FC = () => {
                   disabled={smsSyncing}
                   className="flex items-center justify-center gap-2 w-full premium-btn py-3 disabled:opacity-50"
                 >
-                  {smsSyncing
-                    ? <><RefreshCw size={16} className="animate-spin" /> Scanning New Messages...</>
-                    : <><RefreshCw size={16} /> Sync New Bank Messages (Incremental)</>}
+                  {smsSyncing ? (
+                    <><RefreshCw size={16} className="animate-spin" /> Scanning Messages...</>
+                  ) : (
+                    <><RefreshCw size={16} /> Sync Messages ({smsSyncMode === "incremental" ? "Incremental" : smsSyncMode === "range" ? "Date Range" : "All History"})</>
+                  )}
                 </button>
               </div>
 
               <p className="text-[11px] text-dark-muted mt-4 text-center">
-                Uses timestamp memory — historical duplicate SMS are automatically ignored.
+                Uses smart idempotency — duplicate messages are automatically skipped.
               </p>
             </div>
           )}

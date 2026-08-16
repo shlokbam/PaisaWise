@@ -74,6 +74,7 @@ public class SmsReaderPlugin extends Plugin {
 
         int maxMessages = call.getInt("maxMessages", 500);
         long sinceTimestamp = call.getLong("sinceTimestamp", 0L);
+        long untilTimestamp = call.getLong("untilTimestamp", 0L);
         JSArray messages = new JSArray();
 
         try {
@@ -84,9 +85,15 @@ public class SmsReaderPlugin extends Plugin {
             String selection = null;
             String[] selectionArgs = null;
 
-            if (sinceTimestamp > 0) {
-                selection = "date > ?";
+            if (sinceTimestamp > 0 && untilTimestamp > 0) {
+                selection = "date >= ? AND date <= ?";
+                selectionArgs = new String[]{ String.valueOf(sinceTimestamp), String.valueOf(untilTimestamp) };
+            } else if (sinceTimestamp > 0) {
+                selection = "date >= ?";
                 selectionArgs = new String[]{ String.valueOf(sinceTimestamp) };
+            } else if (untilTimestamp > 0) {
+                selection = "date <= ?";
+                selectionArgs = new String[]{ String.valueOf(untilTimestamp) };
             }
 
             Cursor cursor = getContext().getContentResolver().query(

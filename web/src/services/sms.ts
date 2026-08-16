@@ -9,7 +9,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 interface SmsReaderPlugin {
   requestPermission(): Promise<{ granted: boolean }>;
   checkPermission(): Promise<{ granted: boolean }>;
-  readAllSms(options: { maxMessages?: number; sinceTimestamp?: number }): Promise<{ messages: SmsMessage[] }>;
+  readAllSms(options: { maxMessages?: number; sinceTimestamp?: number; untilTimestamp?: number }): Promise<{ messages: SmsMessage[] }>;
   getLastSyncTime(): Promise<{ lastSyncedTimestamp: number }>;
   setLastSyncTime(options: { timestamp: number }): Promise<{ success: boolean }>;
   startListening(): Promise<void>;
@@ -53,11 +53,11 @@ export async function checkSmsPermission(): Promise<boolean> {
   }
 }
 
-/** Read SMS messages from inbox newer than sinceTimestamp (if provided). */
-export async function readAllSms(maxMessages = 500, sinceTimestamp = 0): Promise<SmsMessage[]> {
+/** Read SMS messages from inbox within timestamp range (if provided). */
+export async function readAllSms(maxMessages = 500, sinceTimestamp = 0, untilTimestamp = 0): Promise<SmsMessage[]> {
   if (!isNativeAndroid()) return [];
   try {
-    const { messages } = await SmsReader.readAllSms({ maxMessages, sinceTimestamp });
+    const { messages } = await SmsReader.readAllSms({ maxMessages, sinceTimestamp, untilTimestamp });
     return messages;
   } catch {
     return [];
