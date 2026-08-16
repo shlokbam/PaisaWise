@@ -76,11 +76,20 @@ export const Settings: React.FC = () => {
       let skipped = 0;
       for (const msg of bankMessages) {
         try {
-          await apiRequest("/sms/ingest", {
+          const res = await apiRequest("/mobile/ingest", {
             method: "POST",
-            body: JSON.stringify({ sender: msg.sender, body: msg.body }),
+            body: JSON.stringify({ sender: msg.sender, body: msg.body, date: msg.date }),
           });
-          sent++;
+          if (res) {
+            // Check if created_at and updated_at match or if backend flagged duplicate
+            if (res.source_message_hash) {
+              sent++;
+            } else {
+              skipped++;
+            }
+          } else {
+            skipped++;
+          }
         } catch {
           skipped++;
         }
