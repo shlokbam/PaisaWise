@@ -269,9 +269,9 @@ export const AIChat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col flex-1 h-[calc(100vh-7.5rem)] sm:h-[calc(100vh-6.5rem)] md:h-[calc(100vh-6rem)] glass-panel overflow-hidden">
+    <div className="flex flex-col flex-1 h-[calc(100vh-8.5rem)] sm:h-[calc(100vh-6.5rem)] md:h-[calc(100vh-6rem)] glass-panel overflow-hidden w-full max-w-full min-w-0">
       {/* AI Chat Header */}
-      <div className="p-3 sm:p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between shrink-0">
+      <div className="p-2.5 sm:p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between shrink-0 w-full min-w-0">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <div className="relative shrink-0">
             <div className="p-1 sm:p-1.5 bg-yellow-500/10 border border-yellow-500/25 rounded-lg text-yellow-400">
@@ -297,11 +297,11 @@ export const AIChat: React.FC = () => {
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3.5 sm:space-y-6 bg-dark-bg/25">
+      <div className="flex-1 overflow-y-auto p-2.5 sm:p-6 space-y-3.5 sm:space-y-6 bg-dark-bg/25 w-full min-w-0">
         {messages.map((msg, idx) => (
           <div 
             key={idx} 
-            className={`flex gap-2 sm:gap-3.5 max-w-full sm:max-w-3xl ${
+            className={`flex gap-2 sm:gap-3.5 w-full max-w-full sm:max-w-3xl min-w-0 ${
               msg.role === "user" ? "ml-auto flex-row-reverse" : ""
             }`}
           >
@@ -315,15 +315,15 @@ export const AIChat: React.FC = () => {
             </div>
             
             {/* Message box */}
-            <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm leading-relaxed border shadow-premium max-w-[85%] sm:max-w-full ${
+            <div className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm leading-relaxed border shadow-premium min-w-0 flex-1 break-words overflow-hidden ${
               msg.role === "user" 
-                ? "bg-dark-accent/10 border-dark-accent/20 text-white rounded-tr-none" 
-                : "bg-dark-card/90 border-dark-border text-dark-text rounded-tl-none"
+                ? "bg-dark-accent/10 border-dark-accent/20 text-white rounded-tr-none max-w-[85%]" 
+                : "bg-dark-card/90 border-dark-border text-dark-text rounded-tl-none max-w-[90%] sm:max-w-full"
             }`}>
               {msg.role === "user" ? (
-                <p className="text-white text-xs sm:text-sm">{msg.content}</p>
+                <p className="text-white text-xs sm:text-sm break-words">{msg.content}</p>
               ) : (
-                <div className="space-y-1.5 overflow-x-auto">
+                <div className="space-y-1.5 min-w-0 overflow-x-auto break-words">
                   {renderFormattedContent(msg.content)}
                 </div>
               )}

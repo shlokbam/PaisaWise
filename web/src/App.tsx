@@ -135,22 +135,22 @@ const AppContent: React.FC = () => {
       </aside>
 
       {/* Main Panel Content wrapper */}
-      <div className="flex-1 flex flex-col min-h-screen lg:pl-64">
+      <div className="flex-1 flex flex-col min-h-screen lg:pl-64 w-full max-w-full overflow-x-hidden min-w-0">
         {/* Header (Mobile nav indicator) */}
-        <header className="lg:hidden p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between">
+        <header className="lg:hidden p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="PaisaWise Logo" className="w-7 h-7 object-contain rounded-md" />
             <h1 className="text-lg font-bold tracking-tight text-white">
               <span className="text-dark-accent mr-[2px]">Paisa</span>Wise
             </h1>
           </div>
-          <button onClick={() => setSidebarOpen(true)} className="text-dark-muted hover:text-white">
+          <button onClick={() => setSidebarOpen(true)} className="text-dark-muted hover:text-white p-1">
             <Menu size={22} />
           </button>
         </header>
 
         {/* Dynamic page content */}
-        <main className={`flex-1 ${activeTab === "ai" ? "p-2 sm:p-4 md:p-8 flex flex-col" : "p-4 md:p-8"} max-w-7xl w-full mx-auto overflow-y-auto`}>
+        <main className={`flex-1 ${activeTab === "ai" ? "p-2 sm:p-4 md:p-8 flex flex-col" : "p-3 sm:p-4 md:p-8"} max-w-7xl w-full max-w-full mx-auto overflow-y-auto min-w-0`}>
           {renderContent()}
         </main>
       </div>
