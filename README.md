@@ -6,7 +6,6 @@
 
 **A privacy-first, AI-powered personal finance platform that automatically captures bank SMS alerts and turns them into actionable financial insights — available as a web app and native Android app.**
 
-[![Build Android APK](https://github.com/shlokbam/PaisaWise/actions/workflows/build-android.yml/badge.svg)](https://github.com/shlokbam/PaisaWise/actions/workflows/build-android.yml)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -18,125 +17,77 @@
 
 ---
 
+## 📱 Download Latest Android APK
+
+Get the pre-compiled native Android app directly from this repository:
+
+📥 **[Download Latest PaisaWise Android APK (app-debug.apk)](web/android/app/build/outputs/apk/debug/app-debug.apk)**
+
+> ⚡ **Features in latest APK:** Real-Time Background SMS Listener, Instant Push Notifications (`🔔 PaisaWise Auto-Sync`), Incremental Timestamp Memory, 1-Click Exclude/Delete in AI Inbox, and Mobile Responsive UI!
+
+---
+
 ## 🧠 The Core Philosophy
 
 Traditional expense trackers require you to manually log every purchase. PaisaWise operates **invisibly**:
 
 1. 💳 **Transaction Occurs** — UPI, Card swipe, NetBanking
 2. 📩 **Bank Sends SMS Alert** to your phone
-3. 📱 **PaisaWise Captures SMS** — locally, without uploading OTPs or spam
+3. 📱 **Real-Time Background Listener (`SmsReceiver.java`)** intercepts bank SMS instantly
 4. 🔍 **Local Regex Parser** normalizes fields (amount, merchant, direction, account)
 5. ⚙️ **Rules Engine + Heuristics** silently classify the transaction
 6. 🤖 **AI Classification** triggers only for unknown or low-confidence entities
-7. 👤 **Human-in-the-Loop Inbox** alerts you only when confirmation is needed
+7. 👤 **Human-in-the-Loop AI Inbox** alerts you only when review is needed
 8. 📐 **Personalized Rules** are suggested automatically from your corrections
 
 > **Key Product Rules:**
 > - Transaction ≠ Expense — account movements aren't personal spending
-> - Debit ≠ Personal Expense — family transfers, investments, IPOs are excluded
+> - Debit ≠ Personal Expense — family transfers, business expenses, investments are excluded
 > - Credit ≠ Income — friend settlements and refunds are tracked and offset
 
 ---
 
 ## ✨ Features
 
-### 📊 Dashboard
-- Real-time summary cards: total income, total expenses, net savings, transaction count
-- Month-over-month trend visualization
-- Quick navigation to pending AI inbox reviews
-- Recent transaction feed with category badges
-
-### 📒 Transaction Ledger
-- Full sortable and filterable transaction history
-- Inline editing: category, merchant, notes, amount corrections
-- Bulk management support
-- Confidence badges showing AI classification certainty
-- Per-transaction tags and merchant mapping
+### ⚡ Real-Time SMS Auto-Sync (Android Native)
+- **Background Receiver (`SMS_RECEIVED`)**: Intercepts bank SMS in real time as soon as you make a payment (BOB, HDFC, SBI, ICICI, Axis, Kotak, Paytm, PhonePe, GPAY, etc.).
+- **Instant Local Push Notifications**: Displays a native phone notification when a transaction is logged:
+  > 🔔 *PaisaWise Auto-Sync: New bank transaction automatically logged & categorized!*
+- **Incremental Timestamp Sync**: Remembers `last_synced_timestamp` in `SharedPreferences` — historical duplicate messages (600+ items) are **never re-scanned or stacked**.
 
 ### 🤖 AI Inbox (Human-in-the-Loop)
-- Auto-flagged low-confidence transactions requiring human review
-- One-click approve or reassign category
-- AI reasoning shown for each classification decision
-- Batch review with keyboard-friendly actions
-
-### 💰 Budget Manager
-- Create monthly budgets by category (Food, Transport, Entertainment, etc.)
-- Donut chart progress rings — visual burn rate at a glance
-- Over-budget alerts shown inline
-- Budget vs. actual comparison view
-
-### 📅 Subscription Tracker
-- Auto-detected recurring transactions (Netflix, Spotify, Zomato Pro, etc.)
-- Monthly cost summary with billing cycle indicators
-- Active / paused / cancelled status management
-
-### ⚡ Automation Rules Engine
-- User-definable rules: "If sender contains ZOMATO → Category: Food"
-- Priority ordering with drag-to-reorder
-- Regex and plain-text matcher support
-- Confidence override to skip AI for known patterns
-- Enabled/disabled toggle per rule
-
-### 📈 Analytics
-- Category spending breakdown (bar + pie charts)
-- Monthly trend lines using Recharts SVG engine
-- Income vs. expense comparison by month
-- Top merchant leaderboard
+- Flagged low-confidence transactions requiring review.
+- **1-Click Quick Actions**:
+  - **`✓ Personal`**: Confirms as a personal expense.
+  - **`🚫 Exclude`**: Marks as non-personal/irrelevant (excludes from personal budget & expenses).
+  - **`🗑️ Delete`**: Permanently deletes the record.
+  - **`✎ Edit`**: Fine-tune ownership, category, or type.
+- **Auto-Rule Suggestions**: Repeated corrections prompt rule creation automatically.
 
 ### 💬 AI Chat Assistant
-- Conversational financial assistant powered by Groq / Mistral
-- Strict financial domain guardrails — no off-topic answers
-- Context-aware tools: monthly summary, budget status, category breakdown
-- Markdown-formatted responses with code block support
-- **Available AI providers** (auto-selects whichever key is configured):
-  - Groq (Mixtral-8x7B / Llama 3)
-  - Mistral Large
+- Conversational financial assistant powered by **Groq / Mistral**.
+- Context-aware tools: query spendings, budget limits, category breakdowns, monthly summaries.
+- **Rich Markdown Rendering**: Renders HTML data tables (`|`), blockquotes (`>`), bullet lists, and formatted code blocks seamlessly on web & mobile.
+- Domain guardrails — strictly refuses non-financial off-topic queries.
 
-### 📤 Export Engine
-- Export transactions as **PDF** — branded, themed, with summary cards
-- Export as **Excel (.xlsx)** — alternating rows, auto-column widths, category color coding
-- Configurable date range: Last Week / Month / Year / Custom
-- CSV fallback export
+### 📒 Financial Ledger
+- Full transaction history with search and preset filters.
+- **Dual Responsive Layout**:
+  - **Mobile Card View**: Optimized card layout with inline quick-editing on mobile viewports.
+  - **Desktop Data Table**: Full 8-column data grid for desktop screens.
 
-### ⚙️ Settings
-- Change password
-- Upload profile avatar
-- Configure Groq and/or Mistral API keys
-- Export financial statements
-- **Android-only**: SMS Transaction Sync card (see Android section below)
+### 📊 Dashboard & Analytics
+- Real-time summary metrics: total income, total expenses, net savings, personal spend.
+- Category spend breakdowns and trend visualization using Recharts.
+- Recent transaction feed with category badges.
 
----
+### 💰 Budget & Subscription Manager
+- Monthly category budgets with interactive burn-rate progress rings.
+- Auto-detected recurring subscriptions (Netflix, Spotify, Zomato Pro) with billing status tracking.
 
-## 📱 Android App
-
-PaisaWise ships as a native Android APK built with **Capacitor** — the same React/Vite web frontend wrapped in a native Android shell.
-
-### What the Android App Does Extra
-- Requests `READ_SMS` + `RECEIVE_SMS` permission on first launch
-- Scans entire SMS inbox on demand and filters for bank messages
-- Automatically ingests matching bank SMS into PaisaWise
-- Real-time sync — new bank SMS can be pushed to the backend
-
-### Download the APK
-Every push to `main` automatically builds a fresh APK via GitHub Actions:
-
-1. Go to: [Actions → Build PaisaWise Android APK](https://github.com/shlokbam/PaisaWise/actions/workflows/build-android.yml)
-2. Click the latest successful ✅ run
-3. Scroll to **Artifacts** → download `PaisaWise-debug-N`
-4. Unzip → transfer `app-debug.apk` to your phone
-
-### Install the APK
-1. On your Android phone: **Settings → Apps → Special app access → Install unknown apps**
-2. Allow your Files/Downloads app to install APKs
-3. Tap `app-debug.apk` → **Install** → **Open**
-
-### First-time SMS Sync
-1. Log in with your credentials
-2. Go to **Settings → SMS Transaction Sync**
-3. Tap **"Grant SMS Read Permission"** → Allow
-4. Tap **"Sync All Bank Messages"** → all bank SMS are filtered and imported
-
-> ⚠️ The app connects to your backend over local WiFi. Your phone and Mac must be on the same network. The backend URL is baked in at build time (default: `http://192.168.1.4:8000/api/v1`). To change it, trigger the workflow manually from the Actions tab with a custom URL.
+### 📤 Financial Statement Exporter
+- Export statements to **PDF** (custom branded summary metrics + table) or **Excel (.xlsx)** (styled header, auto-fit columns, zebra rows).
+- Configurable date ranges (Week, Month, Year, Custom).
 
 ---
 
@@ -148,14 +99,12 @@ Every push to `main` automatically builds a fresh APK via GitHub Actions:
 | Python | 3.11+ | Runtime |
 | FastAPI | ≥ 0.115 | Async API framework |
 | SQLAlchemy | ≥ 2.0 | ORM |
-| PostgreSQL | 15+ | Relational database |
-| Alembic | ≥ 1.13 | Database migrations |
+| SQLite / PostgreSQL | 15+ | Relational database |
 | python-jose | ≥ 3.3 | JWT authentication |
 | passlib + bcrypt | ≥ 1.7 | Password hashing |
 | httpx | ≥ 0.27 | Async HTTP client (AI APIs) |
 | fpdf2 | ≥ 2.7.9 | PDF export generation |
 | openpyxl | ≥ 3.1.5 | Excel export generation |
-| pytest | ≥ 8.1 | Testing suite |
 
 ### Web Frontend
 | Package | Version | Purpose |
@@ -172,14 +121,8 @@ Every push to `main` automatically builds a fresh APK via GitHub Actions:
 |---|---|---|
 | @capacitor/core | 8.5 | Native bridge |
 | @capacitor/android | 8.5 | Android platform |
-| @capacitor/cli | 8.5 | Build tooling |
-| Custom SmsReaderPlugin | — | Native Java SMS reading |
-
-### AI Providers
-| Provider | Models | Role |
-|---|---|---|
-| Groq | Mixtral-8x7B, Llama 3 | Primary (fast inference) |
-| Mistral | Mistral Large | Fallback |
+| Custom SmsReceiver | Native Java | Real-time SMS BroadcastReceiver |
+| Custom SmsReaderPlugin | Native Java | Incremental SMS reader & SharedPreferences |
 
 ---
 
@@ -192,18 +135,19 @@ graph TD
     classDef ai fill:#311042,stroke:#A855F7,stroke-width:2px,color:#fff;
     classDef db fill:#0A2540,stroke:#00D4B2,stroke-width:2px,color:#fff;
 
-    subgraph Device ["Android App (Capacitor + Native SMS Plugin)"]
-        SMS["Incoming Bank SMS"] -->|SMS Intent| Recv("SmsReaderPlugin.java")
-        Recv -->|Filter bank messages| Parser("Local JS Filter")
-        Parser -->|POST /sms/ingest| API
+    subgraph Device ["Android App (Capacitor + SmsReceiver)"]
+        SMS["Incoming Bank SMS"] -->|SMS Intent| Recv("SmsReceiver.java")
+        Recv -->|Filter Bank Patterns| Ingest("HTTP POST /mobile/ingest")
+        Recv -->|Push Notification| Notif("🔔 Native Android Push Notification")
     end
 
     subgraph Server ["PaisaWise FastAPI Backend"]
-        API["FastAPI Gateway"] --> Accounts["Account Resolver"]
+        Ingest --> API["FastAPI Gateway"]
+        API --> Accounts["Account Resolver"]
         Accounts --> Pipeline{"Intelligence Pipeline"}
         Pipeline -->|"1. Rules Engine"| Rules["User Automation Rules"]
         Pipeline -->|"2. Heuristics"| Heuristics["Transfer / Refund / Merchant Match"]
-        Rules -->|"Confidence: 1.0"| DB[("PostgreSQL Ledger")]
+        Rules -->|"Confidence: 1.0"| DB[("Ledger DB")]
         Heuristics -->|"Confidence ≥ 0.90"| DB
         Heuristics -->|"Confidence < 0.90"| AIService["AI Classifier"]
     end
@@ -214,10 +158,10 @@ graph TD
         Provider -->|fallback| Mistral["Mistral Large"]
         Groq --> ReviewBox["AI Inbox (Human Confirmation)"]
         Mistral --> ReviewBox
-        ReviewBox -->|Approved| DB
+        ReviewBox -->|Approved / Excluded| DB
     end
 
-    class SMS,Recv,Parser device;
+    class SMS,Recv,Ingest,Notif device;
     class API,Accounts,Pipeline,Rules,Heuristics,AIService backend;
     class Provider,Groq,Mistral,ReviewBox ai;
     class DB db;
@@ -229,133 +173,54 @@ graph TD
 
 ```
 PaisaWise/
-├── .github/
-│   └── workflows/
-│       └── build-android.yml       # CI: auto-builds Android APK on every push
-│
 ├── backend/
 │   ├── app/
-│   │   ├── api/                    # API route handlers
-│   │   │   ├── auth.py             # Register, login, JWT refresh
-│   │   │   ├── transactions.py     # CRUD ledger + PDF/Excel/CSV export
-│   │   │   ├── dashboard.py        # Summary metrics and monthly trends
-│   │   │   ├── budgets.py          # Budget CRUD and burn rate
-│   │   │   ├── subscriptions.py    # Recurring transaction management
-│   │   │   ├── rules.py            # Automation rule CRUD
-│   │   │   ├── analytics.py        # Category breakdown and trend charts
-│   │   │   ├── ai.py               # AI chat endpoint with guardrails
-│   │   │   ├── categories.py       # Category listing
-│   │   │   ├── mobile.py           # SMS ingest + batch sync endpoint
-│   │   │   └── deps.py             # Auth dependency injection
-│   │   ├── ai/
-│   │   │   ├── tools.py            # AI read-only tool definitions
-│   │   │   ├── prompts.py          # System prompt + domain guardrails
-│   │   │   └── classifier.py       # Groq/Mistral provider abstraction
+│   │   ├── api/                    # API route handlers (auth, ledger, mobile, ai, export...)
+│   │   ├── ai/                     # AI classifier & prompt tools
 │   │   ├── models/                 # SQLAlchemy ORM models
-│   │   ├── schemas/                # Pydantic validation schemas
+│   │   ├── schemas/                # Pydantic schemas
 │   │   ├── parsers/
-│   │   │   └── sms_parser.py       # Regex SMS parser (HDFC, SBI, ICICI, Axis…)
-│   │   ├── services/               # Transaction processing pipeline
-│   │   └── main.py                 # FastAPI app entrypoint + CORS config
-│   ├── tests/                      # Pytest test suites
-│   ├── init_db.py                  # DB initializer + seed data
+│   │   │   └── sms_parser.py       # Regex SMS parser (BOB, HDFC, SBI, ICICI, Axis...)
+│   │   └── main.py                 # FastAPI application entrypoint
 │   └── requirements.txt
 │
 ├── web/
 │   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Dashboard.tsx       # Summary + recent transactions
-│   │   │   ├── Transactions.tsx    # Full ledger with filters
-│   │   │   ├── AIInbox.tsx         # Human-in-the-loop review queue
-│   │   │   ├── Budgets.tsx         # Budget rings and management
-│   │   │   ├── Subscriptions.tsx   # Recurring tracker
-│   │   │   ├── Rules.tsx           # Automation rules editor
-│   │   │   ├── Analytics.tsx       # Charts and breakdowns
-│   │   │   ├── AIChat.tsx          # Conversational AI assistant
-│   │   │   ├── Settings.tsx        # Keys, exports, SMS sync (Android)
-│   │   │   └── Login.tsx           # Auth screen
+│   │   ├── pages/                  # Dashboard, Transactions, AIInbox, AIChat, Settings...
 │   │   ├── services/
-│   │   │   ├── api.ts              # Authenticated fetch client
-│   │   │   └── sms.ts              # Capacitor SMS native bridge
-│   │   ├── context/
-│   │   │   ├── AuthContext.tsx     # JWT + user session management
-│   │   │   └── ToastContext.tsx    # Global notification toasts
-│   │   └── App.tsx                 # Navigation layout
-│   ├── android/                    # Capacitor-generated Android project
-│   │   └── app/src/main/java/com/paisawise/app/
-│   │       ├── MainActivity.java   # Registers native plugins
-│   │       └── SmsReaderPlugin.java # Native Java SMS reader
-│   ├── capacitor.config.ts         # Capacitor app config
-│   ├── .env                        # Web API URL (127.0.0.1)
-│   ├── .env.android                # Android API URL (LAN IP)
-│   └── package.json
-│
-└── android_mock/
-    └── android_mock.py             # SMS simulation script for local testing
+│   │   │   ├── api.ts              # Fetch client
+│   │   │   └── sms.ts              # Native SMS bridge with timestamp memory
+│   │   └── App.tsx                 # App router layout
+│   └── android/                    # Capacitor Android Native project
+│       └── app/src/main/java/com/paisawise/app/
+│           ├── MainActivity.java   # App entry point
+│           ├── SmsReceiver.java    # Real-time background SMS listener
+│           └── SmsReaderPlugin.java # Native SMS reader plugin
+└── README.md
 ```
 
 ---
 
 ## ⚙️ Local Setup Guide
 
-### Prerequisites
-- Python 3.11+
-- Node.js 22+
-- PostgreSQL 15+
-
----
-
-### Step 1 — Database
-
-```bash
-# Create the database
-createdb paisawise
-```
-
----
-
-### Step 2 — Backend
+### 1. Backend Setup
 
 ```bash
 cd backend
 
-# Create virtual environment
-python3.11 -m venv venv
-source venv/bin/activate          # macOS/Linux
-# venv\Scripts\activate           # Windows
+# Activate virtual environment
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment
-cp .env.example .env              # then edit .env
+# Start backend server bound to local Wi-Fi IP
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-
-Edit `backend/.env`:
-```env
-DATABASE_URL=postgresql://localhost/paisawise
-SECRET_KEY=your-long-random-secret-key-here
-
-# AI Providers — configure at least ONE
-GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
-MISTRAL_API_KEY=xxxxxxxxxxxxxxxxxxxx
-```
-
-> 💡 **AI Keys**: Get Groq free at [console.groq.com](https://console.groq.com). Get Mistral at [console.mistral.ai](https://console.mistral.ai). You only need one — PaisaWise auto-selects whichever is configured.
-
-```bash
-# Initialize database tables + seed data
-python init_db.py
-
-# Start backend
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-API docs available at: **http://127.0.0.1:8000/api/v1/docs**
 
 ---
 
-### Step 3 — Web Frontend
+### 2. Web Frontend Setup
 
 ```bash
 cd web
@@ -363,80 +228,21 @@ cd web
 # Install dependencies
 npm install
 
-# Start dev server
-npm run dev -- --host 127.0.0.1 --port 3000
+# Start Vite dev server
+npm run dev
 ```
 
-Open: **http://127.0.0.1:3000**
-
-Default credentials:
-| Field | Value |
-|---|---|
-| Email | `shlok@paisawise.com` |
-| Password | `password` |
+Open: **http://localhost:5173**
 
 ---
 
-### Step 4 — AI Keys (In-App)
+### 3. Installing the Android APK
 
-After logging in, go to **Settings → AI API Keys** and enter your Groq or Mistral key. You can also set these as environment variables in `backend/.env`.
-
----
-
-### Step 5 — SMS Simulation (Local Testing)
-
-To simulate bank SMS without a real phone:
-
-```bash
-# From repo root
-backend/venv/bin/python android_mock/android_mock.py
-```
-
-This script:
-1. Filters spam, OTPs, and promotional messages
-2. Parses HDFC, SBI, ICICI, Axis SMS formats
-3. Queues transactions locally in `android_mock_queue.json`
-4. Authenticates via JWT and batch-syncs to `/api/v1/mobile/sync`
-5. Prints classification results with rule matches and confidence scores
-
----
-
-## 📲 Android App Build (GitHub Actions — No Local SDK Needed)
-
-The Android APK is built automatically via CI. No Android Studio required.
-
-### Automatic Builds
-Every push to `main` triggers a build. Download from:
-**Actions → Build PaisaWise Android APK → Artifacts**
-
-### Manual Build with Custom Backend URL
-1. Go to **Actions → Build PaisaWise Android APK**
-2. Click **"Run workflow"**
-3. Enter your backend URL: `http://YOUR_MAC_IP:8000/api/v1`
-4. Click **Run workflow** → download APK when complete
-
-### Find Your Mac's IP
-```bash
-ipconfig getifaddr en0
-# e.g. 192.168.1.4
-```
-
-### For Local Network Use (Phone + Mac on Same WiFi)
-Restart your backend to listen on all interfaces:
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
----
-
-## 🧪 Running Tests
-
-```bash
-# From repo root
-backend/venv/bin/pytest backend/tests/ -v
-```
-
-Tests cover: SMS regex parsing, rules evaluation, JWT auth, transaction API endpoints.
+1. Transfer [`app-debug.apk`](web/android/app/build/outputs/apk/debug/app-debug.apk) to your Android phone.
+2. Allow installation of unknown apps if prompted.
+3. Open PaisaWise → Log in → Go to **Settings**.
+4. Tap **"Grant SMS & Notification Permission"**.
+5. Real-time background transaction tracking is now **active**!
 
 ---
 
@@ -444,25 +250,10 @@ Tests cover: SMS regex parsing, rules evaluation, JWT auth, transaction API endp
 
 | Concern | How PaisaWise Handles It |
 |---|---|
-| **OTP Protection** | Regex pre-filter runs on-device; OTP-containing messages are never transmitted |
-| **Password Storage** | bcrypt salted hash — raw passwords never stored |
-| **Data Isolation** | All queries enforce `user_id == current_user.id` — no cross-user data leakage |
-| **AI Read-Only** | The AI assistant can only read data via defined tools — it cannot write, delete, or modify records |
-| **Domain Guardrails** | AI system prompt enforces financial-only responses; off-topic queries are politely refused |
-| **JWT Security** | Tokens are short-lived with secure secret key signing |
-
----
-
-## 🗺 Roadmap
-
-- [ ] **Goals & Savings Tracker** — set targets with progress rings
-- [ ] **Spending Trends Charts** — 3/6/12 month category trend lines
-- [ ] **Bank Statement CSV Import** — HDFC, SBI, ICICI statement parsing
-- [ ] **Budget Forecasting** — predict month-end spend from daily burn rate
-- [ ] **PWA Support** — installable on iOS via Add to Home Screen
-- [ ] **Anomaly Detection** — flag unusual spending spikes automatically
-- [ ] **Tax Summary Export** — 80C, HRA, medical deductibles report
-- [ ] **Google Sheets Sync** — real-time ledger mirroring
+| **OTP Protection** | Regex pre-filter runs locally; OTPs and personal chat messages are ignored |
+| **Data Isolation** | All queries enforce strict `user_id == current_user.id` scoping |
+| **Incremental Sync** | Only un-synced messages are processed using timestamp memory |
+| **Domain Guardrails** | AI assistant strictly refuses non-financial off-topic queries |
 
 ---
 
