@@ -41,7 +41,12 @@ def get_transactions(
     query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
     
     if category_id:
-        query = query.filter(Transaction.category_id == category_id)
+        from uuid import UUID as PyUUID
+        try:
+            cat_uuid = PyUUID(str(category_id))
+            query = query.filter(Transaction.category_id == cat_uuid)
+        except Exception:
+            query = query.filter(Transaction.category_id == category_id)
     if ownership:
         query = query.filter(Transaction.ownership == ownership.upper())
     if type:

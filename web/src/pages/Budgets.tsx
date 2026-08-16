@@ -86,7 +86,7 @@ export const Budgets: React.FC = () => {
     setSelectedBudget(b);
     setLoadingTx(true);
     try {
-      let url = "/transactions?limit=100";
+      let url = "/transactions?limit=100&type=EXPENSE&include=true";
       if (b.category_id) {
         url += `&category_id=${b.category_id}`;
       }
