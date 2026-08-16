@@ -640,27 +640,19 @@ def submit_feedback(
         "rule_suggestion": rule_suggestion_payload
     }
 
-@router.post("/{id}/classify", response_model=TransactionOut)
-def classify_transaction(
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_transaction(
     id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Triggers AI-based classification fallback for a specific transaction."""
+    """Deletes a transaction permanently."""
     tx = db.query(Transaction).filter(Transaction.id == id, Transaction.user_id == current_user.id).first()
     if not tx:
         raise HTTPException(status_code=404, detail="Transaction not found")
         
-    ai_result = classify_transaction_with_ai(db, tx)
-    
-    # Update fields
-    tx.ownership = ai_result.get("ownership", "UNKNOWN")
-    tx.transaction_type = ai_result.get("transaction_type", "EXPENSE")
-    tx.category_id = ai_result.get("category_id")
-    tx.subcategory_id = ai_result.get("subcategory_id")
-    tx.confidence = Decimal(str(ai_result.get("confidence", 0.50)))
-    tx.include_in_personal_expenses = ai_result.get("include_in_personal_expenses", False)
-    
+    db.query(Notification).filter_by(transaction_id=tx.id).delete()
+    db.query(UserFeedback).filter_by(transaction_id=tx.id).delete()
+    db.delete(tx)
     db.commit()
-    db.refresh(tx)
-    return tx
+    return None

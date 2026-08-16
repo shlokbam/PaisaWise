@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { apiRequest } from "../services/api";
 import { 
-  Sparkles, Check, RefreshCw, Plus, CheckCircle2, Edit3 
+  Sparkles, Check, RefreshCw, Plus, CheckCircle2, Edit3, Ban, Trash2 
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 
@@ -85,14 +85,14 @@ export const AIInbox: React.FC = () => {
       const res = await apiRequest(`/transactions/${tx.id}/feedback`, {
         method: "POST",
         body: JSON.stringify({
-          ownership: tx.ownership,
-          transaction_type: tx.transaction_type,
+          ownership: "PERSONAL",
+          transaction_type: "EXPENSE",
           category_id: tx.category_id,
-          include_in_personal_expenses: tx.ownership === "PERSONAL" && tx.transaction_type === "EXPENSE"
+          include_in_personal_expenses: true
         })
       });
       
-      // Remove from active list
+      showToast("Confirmed as Personal Expense.", "success");
       setTxs(prev => prev.filter(item => item.id !== tx.id));
       
       if (res.suggest_rule) {
@@ -100,6 +100,41 @@ export const AIInbox: React.FC = () => {
       }
     } catch (err) {
       showToast("Failed to confirm transaction.", "error");
+    }
+  };
+
+  const handleExclude = async (tx: Transaction) => {
+    try {
+      const res = await apiRequest(`/transactions/${tx.id}/feedback`, {
+        method: "POST",
+        body: JSON.stringify({
+          ownership: "NON_PERSONAL",
+          transaction_type: "OTHER",
+          category_id: tx.category_id,
+          include_in_personal_expenses: false
+        })
+      });
+      
+      showToast("Marked as Irrelevant & Excluded from personal expenses.", "info");
+      setTxs(prev => prev.filter(item => item.id !== tx.id));
+      
+      if (res.suggest_rule) {
+        setActiveSuggestion(res.rule_suggestion);
+      }
+    } catch (err) {
+      showToast("Failed to exclude transaction.", "error");
+    }
+  };
+
+  const handleDelete = async (txId: string) => {
+    try {
+      await apiRequest(`/transactions/${txId}`, {
+        method: "DELETE"
+      });
+      showToast("Transaction deleted permanently.", "success");
+      setTxs(prev => prev.filter(item => item.id !== txId));
+    } catch (err) {
+      showToast("Failed to delete transaction.", "error");
     }
   };
 
@@ -155,7 +190,7 @@ export const AIInbox: React.FC = () => {
           <Sparkles className="text-yellow-400" size={24} /> AI Inbox
         </h2>
         <p className="text-dark-muted text-sm mt-0.5">
-          Verify and resolve transactions flagged for review.
+          Verify and resolve transactions flagged for review. Mark irrelevant items to exclude them from your personal expenses.
         </p>
       </div>
 
@@ -231,6 +266,7 @@ export const AIInbox: React.FC = () => {
                       <option value="PERSONAL">PERSONAL</option>
                       <option value="FAMILY">FAMILY</option>
                       <option value="BUSINESS">BUSINESS</option>
+                      <option value="NON_PERSONAL">NON_PERSONAL</option>
                       <option value="UNKNOWN">UNKNOWN</option>
                     </select>
                   </div>
@@ -246,6 +282,7 @@ export const AIInbox: React.FC = () => {
                       <option value="TRANSFER">TRANSFER</option>
                       <option value="INVESTMENT">INVESTMENT</option>
                       <option value="REFUND">REFUND</option>
+                      <option value="OTHER">OTHER</option>
                     </select>
                   </div>
                   <div className="space-y-1 col-span-2">
@@ -296,15 +333,31 @@ export const AIInbox: React.FC = () => {
                   <div className="flex gap-2 mt-2">
                     <button 
                       onClick={() => handleConfirm(tx)} 
+                      title="Confirm as Personal Expense"
                       className="flex-1 py-2 bg-semantic-income/10 border border-semantic-income/20 text-semantic-income rounded-xl text-xs font-semibold hover:bg-semantic-income/20 transition-all flex items-center justify-center gap-1"
                     >
-                      <Check size={14} /> Correct
+                      <Check size={14} /> Personal
+                    </button>
+                    <button 
+                      onClick={() => handleExclude(tx)} 
+                      title="Mark Irrelevant (Exclude from Expenses)"
+                      className="flex-1 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-semibold hover:bg-amber-500/20 transition-all flex items-center justify-center gap-1"
+                    >
+                      <Ban size={14} /> Exclude
                     </button>
                     <button 
                       onClick={() => handleStartEdit(tx)} 
-                      className="flex-1 py-2 bg-dark-hover border border-dark-border text-dark-text rounded-xl text-xs font-semibold hover:bg-dark-hover/80 transition-all flex items-center justify-center gap-1"
+                      title="Custom Edit"
+                      className="py-2 px-3 bg-dark-hover border border-dark-border text-dark-text rounded-xl text-xs font-semibold hover:bg-dark-hover/80 transition-all flex items-center justify-center"
                     >
-                      <Edit3 size={14} /> Edit
+                      <Edit3 size={14} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(tx.id)} 
+                      title="Delete Transaction"
+                      className="py-2 px-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-semibold hover:bg-red-500/20 transition-all flex items-center justify-center"
+                    >
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
