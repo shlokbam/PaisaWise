@@ -5,10 +5,8 @@ const config: CapacitorConfig = {
   appName: 'PaisaWise',
   webDir: 'dist',
   server: {
-    androidScheme: 'https',
-    // For local development, uncomment and set your Mac's IP:
-    // url: 'http://192.168.1.4:3000',
-    // cleartext: true,
+    androidScheme: 'http',
+    cleartext: true,
   },
   plugins: {
     SmsReader: {
