@@ -1,5 +1,19 @@
-// Web browser uses 127.0.0.1, Android build uses Mac LAN IP via .env.android
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
+import { Capacitor } from '@capacitor/core';
+
+// Web browser uses 127.0.0.1, Android native app connects to Mac LAN IP (192.168.1.6)
+const envUrl = import.meta.env.VITE_API_BASE_URL;
+
+function getApiBaseUrl(): string {
+  if (Capacitor.isNativePlatform()) {
+    if (envUrl && !envUrl.includes("127.0.0.1") && !envUrl.includes("localhost")) {
+      return envUrl;
+    }
+    return "http://192.168.1.6:8000/api/v1";
+  }
+  return envUrl || "http://127.0.0.1:8000/api/v1";
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export async function apiRequest(
   endpoint: string,
