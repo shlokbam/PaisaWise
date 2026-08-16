@@ -54,20 +54,9 @@ jobs:
           VITE_API_BASE_URL="$API_URL" npm run build
         working-directory: web
 
-      # ── 6. Copy built web assets into Android project ────────────────────
-      #    Skip `npx cap sync` to avoid Node version fragility.
-      #    The android/ project is already committed; just overwrite assets.
+      # ── 6. Copy built web assets & config into Android project ────────────
       - name: Copy web dist into Android assets
-        run: |
-          ASSETS_DIR="android/app/src/main/assets/public"
-          rm -rf "$ASSETS_DIR"
-          mkdir -p "$ASSETS_DIR"
-          cp -r dist/. "$ASSETS_DIR/"
-          # Also copy Capacitor runtime files (cordova shims required by Gradle)
-          cp -f android/app/src/main/assets/public/cordova.js "$ASSETS_DIR/cordova.js" 2>/dev/null || true
-          cp -f android/app/src/main/assets/public/cordova_plugins.js "$ASSETS_DIR/cordova_plugins.js" 2>/dev/null || true
-          echo "✅ Copied dist into $ASSETS_DIR"
-          ls "$ASSETS_DIR"
+        run: npx cap copy android
         working-directory: web
 
       # ── 7. Write local.properties (tells Gradle where the Android SDK is) ─
@@ -82,7 +71,7 @@ jobs:
 
       # ── 9. Build the debug APK ───────────────────────────────────────────
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tail -100
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
         working-directory: web/android
 
       # ── 9. Upload APK as downloadable artifact ───────────────────────────
