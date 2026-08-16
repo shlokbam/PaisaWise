@@ -269,27 +269,27 @@ export const AIChat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] glass-panel overflow-hidden">
+    <div className="flex flex-col flex-1 h-[calc(100vh-7.5rem)] sm:h-[calc(100vh-6.5rem)] md:h-[calc(100vh-6rem)] glass-panel overflow-hidden">
       {/* AI Chat Header */}
-      <div className="p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="relative">
-            <div className="p-1.5 bg-yellow-500/10 border border-yellow-500/25 rounded-lg text-yellow-400">
-              <Sparkles size={16} className="animate-pulse" />
+      <div className="p-3 sm:p-4 border-b border-dark-border bg-dark-card/50 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+          <div className="relative shrink-0">
+            <div className="p-1 sm:p-1.5 bg-yellow-500/10 border border-yellow-500/25 rounded-lg text-yellow-400">
+              <Sparkles size={14} className="animate-pulse sm:w-4 sm:h-4" />
             </div>
             <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
           </div>
-          <div>
-            <h3 className="font-bold text-white text-sm">PaisaWise AI</h3>
-            <p className="text-[10px] text-dark-muted">Conversational Financial Assistant</p>
+          <div className="min-w-0">
+            <h3 className="font-bold text-white text-xs sm:text-sm truncate">PaisaWise AI</h3>
+            <p className="text-[9px] sm:text-[10px] text-dark-muted truncate">Conversational Assistant</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] bg-dark-accent/25 border border-dark-accent/35 text-white font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1">
+        <div className="hidden xs:flex items-center gap-2 shrink-0">
+          <span className="text-[9px] sm:text-[10px] bg-dark-accent/25 border border-dark-accent/35 text-white font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
             <span className="h-1 w-1 bg-dark-accent rounded-full animate-ping"></span>
             Adaptive Model Mode
           </span>
@@ -297,33 +297,33 @@ export const AIChat: React.FC = () => {
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-dark-bg/25">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3.5 sm:space-y-6 bg-dark-bg/25">
         {messages.map((msg, idx) => (
           <div 
             key={idx} 
-            className={`flex gap-3.5 max-w-3xl ${
+            className={`flex gap-2 sm:gap-3.5 max-w-full sm:max-w-3xl ${
               msg.role === "user" ? "ml-auto flex-row-reverse" : ""
             }`}
           >
             {/* Avatar indicator */}
-            <div className={`w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-xs font-bold border transition-all ${
+            <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl shrink-0 flex items-center justify-center text-xs font-bold border transition-all ${
               msg.role === "user" 
                 ? "bg-dark-accent/15 border-dark-accent/30 text-dark-accent" 
                 : "bg-yellow-500/10 border-yellow-500/25 text-yellow-400"
             }`}>
-              {msg.role === "user" ? <User size={15} /> : <Bot size={15} />}
+              {msg.role === "user" ? <User size={13} className="sm:w-3.5 sm:h-3.5" /> : <Bot size={13} className="sm:w-3.5 sm:h-3.5" />}
             </div>
             
             {/* Message box */}
-            <div className={`p-4 rounded-2xl text-sm leading-relaxed border shadow-premium ${
+            <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm leading-relaxed border shadow-premium max-w-[85%] sm:max-w-full ${
               msg.role === "user" 
                 ? "bg-dark-accent/10 border-dark-accent/20 text-white rounded-tr-none" 
                 : "bg-dark-card/90 border-dark-border text-dark-text rounded-tl-none"
             }`}>
               {msg.role === "user" ? (
-                <p className="text-white text-sm">{msg.content}</p>
+                <p className="text-white text-xs sm:text-sm">{msg.content}</p>
               ) : (
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 overflow-x-auto">
                   {renderFormattedContent(msg.content)}
                 </div>
               )}
@@ -332,19 +332,19 @@ export const AIChat: React.FC = () => {
         ))}
         
         {loading && (
-          <div className="flex gap-3.5 max-w-xl">
-            <div className="w-9 h-9 rounded-xl bg-yellow-500/10 border border-yellow-500/25 text-yellow-400 flex items-center justify-center text-xs">
-              <Sparkles size={15} className="animate-pulse" />
+          <div className="flex gap-2 sm:gap-3.5 max-w-xl">
+            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-yellow-500/10 border border-yellow-500/25 text-yellow-400 flex items-center justify-center text-xs">
+              <Sparkles size={13} className="animate-pulse sm:w-3.5 sm:h-3.5" />
             </div>
-            <div className="bg-dark-card/90 border border-dark-border p-4 rounded-2xl rounded-tl-none text-sm text-dark-muted flex flex-col gap-2.5 shadow-premium">
-              <div className="flex items-center gap-2 text-xs">
-                <RefreshCw className="animate-spin text-dark-accent" size={12} />
+            <div className="bg-dark-card/90 border border-dark-border p-3 sm:p-4 rounded-xl sm:rounded-2xl rounded-tl-none text-xs sm:text-sm text-dark-muted flex flex-col gap-2 shadow-premium">
+              <div className="flex items-center gap-1.5 text-[11px] sm:text-xs">
+                <RefreshCw className="animate-spin text-dark-accent" size={11} />
                 <span>AI is scanning transactions...</span>
               </div>
-              <div className="flex space-x-1.5 py-1 px-1.5 items-center">
-                <div className="w-2 h-2 bg-dark-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-dark-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-dark-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="flex space-x-1.5 py-0.5 px-1 items-center">
+                <div className="w-1.5 h-1.5 bg-dark-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-1.5 h-1.5 bg-dark-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-1.5 h-1.5 bg-dark-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -354,14 +354,14 @@ export const AIChat: React.FC = () => {
 
       {/* Suggestion prompt list (always visible when not loading) */}
       {!loading && (
-        <div className="px-4 py-2.5 border-t border-dark-border/40 bg-dark-bg/10 flex gap-2 overflow-x-auto scrollbar-none select-none">
+        <div className="px-3 py-2 border-t border-dark-border/40 bg-dark-bg/10 flex gap-1.5 overflow-x-auto scrollbar-none select-none shrink-0">
           {suggestions.map((prompt) => (
             <button
               key={prompt}
               onClick={() => handleSendMessage(prompt)}
-              className="text-xs text-dark-muted hover:text-white bg-dark-hover/20 hover:bg-dark-hover/60 border border-dark-border/60 px-3 py-1.5 rounded-full transition-all shrink-0 flex items-center gap-1.5 hover:border-dark-accent"
+              className="text-[10px] sm:text-xs text-dark-muted hover:text-white bg-dark-hover/20 hover:bg-dark-hover/60 border border-dark-border/60 px-2.5 py-1 rounded-full transition-all shrink-0 flex items-center gap-1 hover:border-dark-accent whitespace-nowrap"
             >
-              <HelpCircle size={11} className="text-dark-accent" />
+              <HelpCircle size={10} className="text-dark-accent" />
               {prompt}
             </button>
           ))}
@@ -374,22 +374,23 @@ export const AIChat: React.FC = () => {
           e.preventDefault();
           handleSendMessage(input);
         }}
-        className="p-4 border-t border-dark-border bg-dark-card/30 flex gap-2"
+        className="p-2.5 sm:p-4 border-t border-dark-border bg-dark-card/30 flex gap-2 shrink-0"
       >
         <input
           type="text"
-          placeholder="Ask a question (e.g., 'How much did I spend on food this month?')..."
+          placeholder="Ask PaisaWise AI..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={loading}
-          className="flex-1 glass-input py-2 text-sm focus:ring-dark-accent focus:border-dark-accent"
+          className="flex-1 glass-input py-2 px-3 text-xs sm:text-sm focus:ring-dark-accent focus:border-dark-accent min-w-0"
         />
         <button 
           type="submit" 
           disabled={loading || !input.trim()}
-          className="premium-btn py-2 px-4 shrink-0 disabled:opacity-50 disabled:scale-100"
+          className="premium-btn py-2 px-3 sm:px-4 shrink-0 disabled:opacity-50 disabled:scale-100 text-xs sm:text-sm flex items-center justify-center gap-1"
         >
-          <Send size={15} />
+          <Send size={14} />
+          <span className="hidden sm:inline">Send</span>
         </button>
       </form>
     </div>

@@ -150,7 +150,7 @@ const AppContent: React.FC = () => {
         </header>
 
         {/* Dynamic page content */}
-        <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+        <main className={`flex-1 ${activeTab === "ai" ? "p-2 sm:p-4 md:p-8 flex flex-col" : "p-4 md:p-8"} max-w-7xl w-full mx-auto overflow-y-auto`}>
           {renderContent()}
         </main>
       </div>
