@@ -105,8 +105,8 @@ public class SmsReceiver extends BroadcastReceiver {
     private void ingestSmsInBackground(Context context, String sender, String body, long date) {
         new Thread(() -> {
             try {
-                // Default server URL — update if custom configured
-                String serverUrl = "http://192.168.1.6:8000/api/v1/mobile/ingest";
+                // Default server URL — live Render backend cloud
+                String serverUrl = "https://paisawise-api.onrender.com/api/v1/mobile/ingest";
                 
                 URL url = new URL(serverUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
