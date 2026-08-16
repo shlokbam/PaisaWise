@@ -252,13 +252,13 @@ export const Settings: React.FC = () => {
             <div className="relative group mb-4">
               {user?.profile_picture ? (
                 <img 
-                  src={`http://127.0.0.1:8000${user.profile_picture}`} 
+                  src={user.profile_picture.startsWith("http") ? user.profile_picture : `https://paisawise-api.onrender.com${user.profile_picture}`} 
                   alt="Avatar" 
                   className="w-24 h-24 rounded-full border border-dark-border object-cover bg-dark-hover"
                 />
               ) : (
                 <div className="w-24 h-24 rounded-full bg-dark-accent/15 border border-dark-accent/30 text-dark-accent font-bold text-3xl flex items-center justify-center">
-                  {user?.first_name?.substring(0, 2).toUpperCase() || "SH"}
+                  {user?.first_name?.substring(0, 2).toUpperCase() || "PW"}
                 </div>
               )}
               
