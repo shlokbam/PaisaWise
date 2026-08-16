@@ -6,7 +6,8 @@ import hashlib
 # Key phrases indicating transactions
 TX_KEYWORDS = [
     r"debited", r"credited", r"debit", r"credit", r"transferred",
-    r"withdrawn", r"deposited", r"sent", r"received", r"recd", r"spent"
+    r"withdrawn", r"deposited", r"sent", r"received", r"recd", r"spent",
+    r"\bdr\.?\b", r"\bcr\.?\b"
 ]
 
 # Key phrases indicating OTPs/Spam that must be ignored
@@ -68,22 +69,23 @@ def parse_sms(body: str, sender_address: Optional[str] = None) -> Optional[Dict[
         
     # 2. Parse Direction (DEBIT / CREDIT)
     direction = "DEBIT" # default fallback
-    if any(word in body_lower for word in ["credited", "received", "recd", "deposited", "added to"]):
+    if re.search(r"dr\.?\s+from\s+a/c", body_lower) or re.search(r"debited", body_lower) or re.search(r"\bdr\.?\b", body_lower):
+        direction = "DEBIT"
+    elif any(word in body_lower for word in ["credited", "received", "recd", "deposited", "added to"]):
         direction = "CREDIT"
-    elif any(word in body_lower for word in ["debited", "withdrawn", "sent", "transferred to", "spent"]):
+    elif any(word in body_lower for word in ["withdrawn", "sent", "transferred to", "spent"]):
         direction = "DEBIT"
         
     # 3. Parse Account (Last 4 digits)
     account_last4 = None
-    # Matches A/c XX1234, Account XX1234, A/c X1234, Card ending in 9999, xx1234
-    acct_match = re.search(r"(?:a/c|acct|account|card|xx)\s*(?:xx|ending|x)*\s*(\d{4})", body_lower)
+    # Matches A/c XX1234, Account XX1234, A/c X1234, Card ending in 9999, xx1234, xxxxxx9162
+    acct_match = re.search(r"(?:a/c|acct|account|card|xx)\s*(?:x)*\s*(\d{4})", body_lower)
     if acct_match:
         account_last4 = acct_match.group(1)
         
     # 4. Parse Institution/Bank
     bank_name = "UNKNOWN"
     if sender_address:
-        # Sender address in India usually looks like "VK-HDFCBK" or "MD-SBIBNK"
         sender_upper = sender_address.upper()
         if "HDFCBK" in sender_upper or "HDFC" in sender_upper:
             bank_name = "HDFC"
@@ -95,9 +97,10 @@ def parse_sms(body: str, sender_address: Optional[str] = None) -> Optional[Dict[
             bank_name = "AXIS"
         elif "PNBSMS" in sender_upper or "PNB" in sender_upper:
             bank_name = "PNB"
+        elif "BOB" in sender_upper or "BARODA" in sender_upper:
+            bank_name = "BOB"
             
     if bank_name == "UNKNOWN":
-        # Check text body
         if "hdfc" in body_lower:
             bank_name = "HDFC"
         elif "sbi" in body_lower or "state bank" in body_lower:
@@ -106,9 +109,11 @@ def parse_sms(body: str, sender_address: Optional[str] = None) -> Optional[Dict[
             bank_name = "ICICI"
         elif "axis" in body_lower:
             bank_name = "AXIS"
+        elif "bob" in body_lower or "baroda" in body_lower:
+            bank_name = "BOB"
             
     # 5. Parse Payment Method (UPI, CARD, NETBANKING)
-    payment_method = "UPI" # default UPI in India
+    payment_method = "UPI"
     if "card" in body_lower or "spent on" in body_lower or "swipe" in body_lower:
         payment_method = "CARD"
     elif "netbanking" in body_lower or "neft" in body_lower or "imps" in body_lower or "rtgs" in body_lower:
@@ -127,34 +132,46 @@ def parse_sms(body: str, sender_address: Optional[str] = None) -> Optional[Dict[
     if upi_match:
         upi_id = upi_match.group(1)
         
-    # Parse merchant/entity
-    # common SMS formats:
-    # "... debited ... to [MERCHANT]"
-    # "... transferred to [RECEIVER]"
-    # "... credited ... from [SENDER]"
-    if direction == "DEBIT":
-        to_match = re.search(r"(?:to|at|vpa)\s+([a-zA-Z0-9\s\.\*]+?)(?:\s+ref|\s+on|\s+via|\s+through|\s+bal|\s+limit|\.|\s*$)", body_clean, re.IGNORECASE)
-        if to_match:
-            entity = to_match.group(1).strip()
-            # clean up common trailing phrases
-            entity = re.sub(r'(?:Ref|RefNo|VPA|UPI|Ref\s+\d+|Bal|Balance|A/c).*$', '', entity, flags=re.IGNORECASE).strip()
-            receiver = entity
-            merchant_name = entity
-    else: # CREDIT
-        from_match = re.search(r"(?:from|by|at)\s+([a-zA-Z0-9\s\.\*]+?)(?:\s+ref|\s+on|\s+via|\s+through|\s+bal|\.|\s*$)", body_clean, re.IGNORECASE)
-        if from_match:
-            entity = from_match.group(1).strip()
-            entity = re.sub(r'(?:Ref|RefNo|VPA|UPI|Ref\s+\d+|Bal|Balance|A/c).*$', '', entity, flags=re.IGNORECASE).strip()
-            sender = entity
-            merchant_name = entity
+    # Check for "cr. to <merchant>" pattern (common in BOB / Kotak UPI SMS)
+    cr_to_match = re.search(r"cr\.\s+to\s+([a-zA-Z0-9\.\_\-]+)", body_lower)
+    if cr_to_match:
+        extracted = cr_to_match.group(1)
+        if "@" in extracted:
+            merchant_raw = extracted.split("@")[0].split(".")[0]
+        else:
+            merchant_raw = extracted.split(".")[0]
+        merchant_name = merchant_raw.capitalize()
 
-    # Fallback merchant cleanups
+    # If no merchant yet, attempt standard regexes
+    if not merchant_name:
+        if direction == "DEBIT":
+            to_match = re.search(r"(?:to|at|vpa)\s+([a-zA-Z0-9\s\.\*]+?)(?:\s+ref|\s+on|\s+via|\s+through|\s+bal|\s+limit|\.|\s*$)", body_clean, re.IGNORECASE)
+            if to_match:
+                entity = to_match.group(1).strip()
+                entity = re.sub(r'(?:Ref|RefNo|VPA|UPI|Ref\s+\d+|Bal|Balance|A/c).*$', '', entity, flags=re.IGNORECASE).strip()
+                receiver = entity
+                merchant_name = entity
+        else:
+            from_match = re.search(r"(?:from|by|at)\s+([a-zA-Z0-9\s\.\*]+?)(?:\s+ref|\s+on|\s+via|\s+through|\s+bal|\.|\s*$)", body_clean, re.IGNORECASE)
+            if from_match:
+                entity = from_match.group(1).strip()
+                entity = re.sub(r'(?:Ref|RefNo|VPA|UPI|Ref\s+\d+|Bal|Balance|A/c).*$', '', entity, flags=re.IGNORECASE).strip()
+                sender = entity
+                merchant_name = entity
+
+    # Clean up merchant name
     if merchant_name:
-        # Strip trailing non-alphanumeric chars
         merchant_name = re.sub(r'[\*\.\s]+$', '', merchant_name).strip()
-        # If the merchant contains "ref", strip it
-        if "ref" in merchant_name.lower():
-            merchant_name = merchant_name[:merchant_name.lower().index("ref")].strip()
+        if "zepto" in merchant_name.lower():
+            merchant_name = "Zepto"
+        elif "swiggy" in merchant_name.lower():
+            merchant_name = "Swiggy"
+        elif "zomato" in merchant_name.lower():
+            merchant_name = "Zomato"
+        elif "uber" in merchant_name.lower():
+            merchant_name = "Uber"
+        elif "amazon" in merchant_name.lower():
+            merchant_name = "Amazon"
             
     return {
         "amount": amount,

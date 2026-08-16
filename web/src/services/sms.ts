@@ -71,11 +71,11 @@ export function filterBankSms(messages: SmsMessage[]): SmsMessage[] {
     'HDFCBK', 'HDFCBANK', 'SBIBNK', 'SBIPSG', 'ICICIB', 'ICICIBK',
     'AXISBK', 'KOTAKB', 'INDBNK', 'PNBSMS', 'BOIIND', 'CANBNK',
     'YESBNK', 'IDBIBK', 'FEDBK',  'SCBANK', 'RBLBNK', 'UCOBNK',
-    'PAYTM',  'GPAY',   'PHONEPE','AMAZON', 'FLIPKRT'
+    'PAYTM',  'GPAY',   'PHONEPE','AMAZON', 'FLIPKRT', 'BARODA', 'BOBSMS', 'BOB'
   ];
 
   const FINANCIAL_KEYWORDS = [
-    'debited', 'credited', 'debit', 'credit',
+    'debited', 'credited', 'debit', 'credit', 'dr.', 'dr ', 'cr.', 'cr ',
     'sent', 'received', 'paid', 'payment',
     'UPI', 'NEFT', 'IMPS', 'RTGS',
     'Rs.', 'INR', 'A/c', 'Amt'
