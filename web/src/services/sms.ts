@@ -9,7 +9,9 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 interface SmsReaderPlugin {
   requestPermission(): Promise<{ granted: boolean }>;
   checkPermission(): Promise<{ granted: boolean }>;
-  readAllSms(options: { maxMessages?: number }): Promise<{ messages: SmsMessage[] }>;
+  readAllSms(options: { maxMessages?: number; sinceTimestamp?: number }): Promise<{ messages: SmsMessage[] }>;
+  getLastSyncTime(): Promise<{ lastSyncedTimestamp: number }>;
+  setLastSyncTime(options: { timestamp: number }): Promise<{ success: boolean }>;
   startListening(): Promise<void>;
   stopListening(): Promise<void>;
 }
@@ -51,14 +53,39 @@ export async function checkSmsPermission(): Promise<boolean> {
   }
 }
 
-/** Read all SMS messages from the inbox (up to maxMessages). */
-export async function readAllSms(maxMessages = 500): Promise<SmsMessage[]> {
+/** Read SMS messages from inbox newer than sinceTimestamp (if provided). */
+export async function readAllSms(maxMessages = 500, sinceTimestamp = 0): Promise<SmsMessage[]> {
   if (!isNativeAndroid()) return [];
   try {
-    const { messages } = await SmsReader.readAllSms({ maxMessages });
+    const { messages } = await SmsReader.readAllSms({ maxMessages, sinceTimestamp });
     return messages;
   } catch {
     return [];
+  }
+}
+
+/** Fetch last synced timestamp from native Android SharedPreferences. */
+export async function getLastSyncTime(): Promise<number> {
+  if (!isNativeAndroid()) {
+    const val = localStorage.getItem("paisawise_last_synced_timestamp");
+    return val ? parseInt(val, 10) : 0;
+  }
+  try {
+    const { lastSyncedTimestamp } = await SmsReader.getLastSyncTime();
+    return lastSyncedTimestamp || 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Save last synced timestamp to native Android SharedPreferences & local storage. */
+export async function setLastSyncTime(timestamp: number): Promise<void> {
+  localStorage.setItem("paisawise_last_synced_timestamp", timestamp.toString());
+  if (!isNativeAndroid()) return;
+  try {
+    await SmsReader.setLastSyncTime({ timestamp });
+  } catch {
+    // Ignore errors on fallback
   }
 }
 

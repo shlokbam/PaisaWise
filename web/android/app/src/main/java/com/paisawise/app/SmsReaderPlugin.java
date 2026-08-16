@@ -1,11 +1,12 @@
 package com.paisawise.app;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.JSArray;
@@ -26,7 +27,8 @@ import com.getcapacitor.annotation.PermissionCallback;
 )
 public class SmsReaderPlugin extends Plugin {
 
-    private static final int SMS_PERMISSION_REQUEST_CODE = 1001;
+    private static final String PREFS_NAME = "PaisaWiseSMS";
+    private static final String KEY_LAST_SYNC = "last_synced_timestamp";
 
     @PluginMethod
     public void checkPermission(PluginCall call) {
@@ -48,7 +50,6 @@ public class SmsReaderPlugin extends Plugin {
             call.resolve(result);
             return;
         }
-        // Request both READ and RECEIVE SMS
         requestPermissionForAlias("readSms", call, "smsPermissionCallback");
     }
 
@@ -65,7 +66,6 @@ public class SmsReaderPlugin extends Plugin {
 
     @PluginMethod
     public void readAllSms(PluginCall call) {
-        // Check permission first
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_SMS)
                 != PackageManager.PERMISSION_GRANTED) {
             call.reject("SMS permission not granted");
@@ -73,6 +73,7 @@ public class SmsReaderPlugin extends Plugin {
         }
 
         int maxMessages = call.getInt("maxMessages", 500);
+        long sinceTimestamp = call.getLong("sinceTimestamp", 0L);
         JSArray messages = new JSArray();
 
         try {
@@ -80,8 +81,16 @@ public class SmsReaderPlugin extends Plugin {
             String[] projection = {"_id", "address", "body", "date"};
             String sortOrder = "date DESC";
 
+            String selection = null;
+            String[] selectionArgs = null;
+
+            if (sinceTimestamp > 0) {
+                selection = "date > ?";
+                selectionArgs = new String[]{ String.valueOf(sinceTimestamp) };
+            }
+
             Cursor cursor = getContext().getContentResolver().query(
-                smsUri, projection, null, null, sortOrder
+                smsUri, projection, selection, selectionArgs, sortOrder
             );
 
             if (cursor != null) {
@@ -113,9 +122,26 @@ public class SmsReaderPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void getLastSyncTime(PluginCall call) {
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        long lastSynced = prefs.getLong(KEY_LAST_SYNC, 0L);
+        JSObject result = new JSObject();
+        result.put("lastSyncedTimestamp", lastSynced);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void setLastSyncTime(PluginCall call) {
+        long timestamp = call.getLong("timestamp", System.currentTimeMillis());
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putLong(KEY_LAST_SYNC, timestamp).apply();
+        JSObject result = new JSObject();
+        result.put("success", true);
+        call.resolve(result);
+    }
+
+    @PluginMethod
     public void startListening(PluginCall call) {
-        // Real-time SMS listening would be done via BroadcastReceiver
-        // For now we resolve immediately — real-time is handled by periodic syncs
         call.resolve();
     }
 

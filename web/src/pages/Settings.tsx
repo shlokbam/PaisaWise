@@ -4,12 +4,12 @@ import { apiRequest, apiDownload } from "../services/api";
 import { useToast } from "../context/ToastContext";
 import {
   requestSmsPermission, checkSmsPermission, readAllSms,
-  filterBankSms, isNativeAndroid
+  filterBankSms, isNativeAndroid, getLastSyncTime, setLastSyncTime
 } from "../services/sms";
 import { 
   Lock, Sparkles, Key, Eye, EyeOff, 
   Upload, CheckCircle, AlertTriangle, FileSpreadsheet, FileText, Download,
-  MessageSquare, ShieldCheck, RefreshCw, Smartphone
+  MessageSquare, ShieldCheck, RefreshCw, Smartphone, Radio
 } from "lucide-react";
 
 export const Settings: React.FC = () => {
@@ -47,18 +47,20 @@ export const Settings: React.FC = () => {
   const [smsPermission, setSmsPermission] = useState<boolean | null>(null);
   const [smsSyncing, setSmsSyncing] = useState(false);
   const [smsSyncResult, setSmsSyncResult] = useState<{ sent: number; skipped: number } | null>(null);
+  const [lastSyncTime, setLastSyncState] = useState<number>(0);
   const isAndroid = isNativeAndroid();
 
   useEffect(() => {
     if (isAndroid) {
       checkSmsPermission().then(setSmsPermission);
+      getLastSyncTime().then(setLastSyncState);
     }
   }, [isAndroid]);
 
   const handleRequestSmsPermission = async () => {
     const granted = await requestSmsPermission();
     setSmsPermission(granted);
-    if (granted) showToast("SMS permission granted! You can now sync messages.", "success");
+    if (granted) showToast("SMS permission granted! Real-time listener enabled.", "success");
     else showToast("SMS permission was denied. Please enable it in phone Settings.", "error");
   };
 
@@ -70,7 +72,8 @@ export const Settings: React.FC = () => {
     setSmsSyncing(true);
     setSmsSyncResult(null);
     try {
-      const allMessages = await readAllSms(1000);
+      const sinceTime = await getLastSyncTime();
+      const allMessages = await readAllSms(1000, sinceTime);
       const bankMessages = filterBankSms(allMessages);
       let sent = 0;
       let skipped = 0;
@@ -94,8 +97,12 @@ export const Settings: React.FC = () => {
           skipped++;
         }
       }
+      const now = Date.now();
+      await setLastSyncTime(now);
+      setLastSyncState(now);
+
       setSmsSyncResult({ sent, skipped });
-      showToast(`Synced ${sent} bank messages successfully!`, "success");
+      showToast(`Synced ${sent} new bank messages successfully!`, "success");
     } catch (err: any) {
       showToast(err.message || "SMS sync failed.", "error");
     } finally {
@@ -511,36 +518,52 @@ export const Settings: React.FC = () => {
               <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
                 <Smartphone size={18} className="text-dark-accent" />
                 <span>SMS Transaction Sync</span>
-                <span className="ml-auto text-[10px] bg-green-500/10 border border-green-500/25 text-green-400 px-2 py-0.5 rounded-full font-semibold">Android</span>
+                <span className="ml-auto text-[10px] bg-green-500/10 border border-green-500/25 text-green-400 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
+                  Real-Time Active
+                </span>
               </h3>
               <p className="text-xs text-dark-muted mb-5">
-                Grant SMS permission to scan your bank messages and automatically import all transactions into PaisaWise.
+                Real-Time background SMS listener catches bank transactions automatically upon arrival on your phone.
               </p>
 
-              {/* Permission Status */}
-              <div className="flex items-center gap-3 mb-5 p-3 rounded-xl bg-dark-bg/40 border border-dark-border">
-                <div className={`p-2 rounded-lg ${
-                  smsPermission === true
-                    ? "bg-green-500/10 text-green-400"
-                    : smsPermission === false
-                    ? "bg-red-500/10 text-red-400"
-                    : "bg-dark-accent/10 text-dark-accent"
-                }`}>
-                  {smsPermission === true
-                    ? <ShieldCheck size={18} />
-                    : <MessageSquare size={18} />}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    {smsPermission === true ? "SMS Permission Granted" :
-                     smsPermission === false ? "SMS Permission Denied" :
-                     "Permission Status Unknown"}
-                  </p>
-                  <p className="text-xs text-dark-muted mt-0.5">
+              {/* Permission & Status */}
+              <div className="space-y-3 mb-5">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-dark-bg/40 border border-dark-border">
+                  <div className={`p-2 rounded-lg ${
+                    smsPermission === true
+                      ? "bg-green-500/10 text-green-400"
+                      : smsPermission === false
+                      ? "bg-red-500/10 text-red-400"
+                      : "bg-dark-accent/10 text-dark-accent"
+                  }`}>
                     {smsPermission === true
-                      ? "PaisaWise can read your bank messages"
-                      : "Tap below to grant permission"}
-                  </p>
+                      ? <ShieldCheck size={18} />
+                      : <MessageSquare size={18} />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      {smsPermission === true ? "Real-Time Listener & Permission Granted" :
+                       smsPermission === false ? "SMS Permission Denied" :
+                       "Permission Status Unknown"}
+                    </p>
+                    <p className="text-xs text-dark-muted mt-0.5">
+                      {smsPermission === true
+                        ? "Incoming bank messages are auto-logged instantly in the background"
+                        : "Tap below to grant permission"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Last Sync Timestamp Display */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-dark-bg/20 border border-dark-border/60 text-xs">
+                  <span className="text-dark-muted font-medium flex items-center gap-1.5">
+                    <Radio size={14} className="text-dark-accent animate-pulse" />
+                    Last Incremental Sync:
+                  </span>
+                  <span className="text-white font-semibold">
+                    {lastSyncTime > 0 ? new Date(lastSyncTime).toLocaleString() : "Never (Will sync new only)"}
+                  </span>
                 </div>
               </div>
 
@@ -549,7 +572,7 @@ export const Settings: React.FC = () => {
                 <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
                   <CheckCircle size={16} />
                   <span>
-                    Imported <strong>{smsSyncResult.sent}</strong> bank transactions
+                    Imported <strong>{smsSyncResult.sent}</strong> new bank transactions
                     {smsSyncResult.skipped > 0 && ` (${smsSyncResult.skipped} skipped as duplicates)`}
                   </span>
                 </div>
@@ -563,7 +586,7 @@ export const Settings: React.FC = () => {
                     className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-dark-accent/15 border border-dark-accent text-white text-sm font-semibold hover:bg-dark-accent/25 transition-all"
                   >
                     <ShieldCheck size={16} />
-                    Grant SMS Read Permission
+                    Grant SMS & Notification Permission
                   </button>
                 )}
                 <button
@@ -572,13 +595,13 @@ export const Settings: React.FC = () => {
                   className="flex items-center justify-center gap-2 w-full premium-btn py-3 disabled:opacity-50"
                 >
                   {smsSyncing
-                    ? <><RefreshCw size={16} className="animate-spin" /> Scanning Messages...</>
-                    : <><RefreshCw size={16} /> Sync All Bank Messages</>}
+                    ? <><RefreshCw size={16} className="animate-spin" /> Scanning New Messages...</>
+                    : <><RefreshCw size={16} /> Sync New Bank Messages (Incremental)</>}
                 </button>
               </div>
 
               <p className="text-[11px] text-dark-muted mt-4 text-center">
-                Messages are filtered locally — only bank/financial SMS are sent to PaisaWise.
+                Uses timestamp memory — historical duplicate SMS are automatically ignored.
               </p>
             </div>
           )}
