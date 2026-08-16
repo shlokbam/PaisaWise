@@ -218,9 +218,143 @@ export const Transactions: React.FC = () => {
         </div>
       </div>
 
-      {/* Transaction List Table */}
+      {/* Transaction List Container */}
       <div className="glass-panel overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile View: Cards layout for small screens */}
+        <div className="block md:hidden divide-y divide-dark-border/40">
+          {txs.map((tx) => (
+            <div key={tx.id} className="p-4 space-y-2 hover:bg-dark-hover/10 transition-colors">
+              <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <h5 className="font-bold text-white text-sm truncate">
+                    {tx.merchant_name || tx.sender || tx.receiver || "Unknown"}
+                  </h5>
+                  <p className="text-[11px] text-dark-muted truncate mt-0.5">
+                    {tx.upi_id || tx.description || "-"}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className={`font-bold text-sm ${tx.direction === "CREDIT" ? "text-semantic-income" : "text-white"}`}>
+                    {tx.direction === "CREDIT" ? "+" : "-"} ₹{tx.amount.toLocaleString()}
+                  </div>
+                  <span className="text-[10px] text-dark-muted block mt-0.5">
+                    {tx.transaction_date}
+                  </span>
+                </div>
+              </div>
+
+              {/* Badges and Actions row */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                  <span className={`font-bold px-2 py-0.5 rounded border uppercase ${getOwnershipLabel(tx.ownership)}`}>
+                    {tx.ownership}
+                  </span>
+                  <span className="bg-dark-bg/60 text-dark-muted px-2 py-0.5 rounded border border-dark-border">
+                    {tx.transaction_type}
+                  </span>
+                  {tx.category?.name && (
+                    <span className="bg-dark-accent/10 text-dark-accent px-2 py-0.5 rounded border border-dark-accent/20">
+                      {tx.category.name}
+                    </span>
+                  )}
+                  <span className={`px-2 py-0.5 rounded font-medium ${
+                    tx.include_in_personal_expenses ? "bg-semantic-income/10 text-semantic-income border border-semantic-income/20" : "bg-dark-hover text-dark-muted"
+                  }`}>
+                    {tx.include_in_personal_expenses ? "✓ Included" : "Excluded"}
+                  </span>
+                </div>
+
+                <button 
+                  onClick={() => handleStartEdit(tx)} 
+                  className="p-1 text-dark-muted hover:text-white hover:bg-dark-hover/40 rounded shrink-0 flex items-center gap-1 text-[11px] font-semibold"
+                >
+                  <Edit3 size={13} />
+                  <span>Edit</span>
+                </button>
+              </div>
+
+              {/* Mobile Inline Edit Panel */}
+              {editingId === tx.id && (
+                <div className="mt-3 p-3 bg-dark-bg/80 rounded-xl border border-dark-border text-xs space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-dark-muted block mb-1">Ownership</label>
+                      <select
+                        value={editOwnership}
+                        onChange={(e) => setEditOwnership(e.target.value)}
+                        className="w-full bg-dark-card border border-dark-border text-white rounded p-1 text-xs"
+                      >
+                        <option value="PERSONAL">PERSONAL</option>
+                        <option value="FAMILY">FAMILY</option>
+                        <option value="BUSINESS">BUSINESS</option>
+                        <option value="UNKNOWN">UNKNOWN</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-dark-muted block mb-1">Type</label>
+                      <select
+                        value={editType}
+                        onChange={(e) => setEditType(e.target.value)}
+                        className="w-full bg-dark-card border border-dark-border text-white rounded p-1 text-xs"
+                      >
+                        <option value="EXPENSE">EXPENSE</option>
+                        <option value="INCOME">INCOME</option>
+                        <option value="TRANSFER">TRANSFER</option>
+                        <option value="INVESTMENT">INVESTMENT</option>
+                        <option value="REFUND">REFUND</option>
+                        <option value="SETTLEMENT">SETTLEMENT</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-dark-muted block mb-1">Category</label>
+                    <select
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value)}
+                      className="w-full bg-dark-card border border-dark-border text-white rounded p-1 text-xs"
+                    >
+                      <option value="">None</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={`inc-m-${tx.id}`}
+                      checked={editInclude}
+                      onChange={(e) => setEditInclude(e.target.checked)}
+                      className="w-4 h-4 rounded text-dark-accent bg-dark-bg border-dark-border focus:ring-dark-accent"
+                    />
+                    <label htmlFor={`inc-m-${tx.id}`} className="text-dark-text font-medium select-none text-xs">
+                      Include in Personal Expenses
+                    </label>
+                  </div>
+
+                  <div className="flex gap-2 pt-2 border-t border-dark-border">
+                    <button onClick={() => setEditingId(null)} className="flex-1 py-1 border border-dark-border rounded text-dark-muted">
+                      Cancel
+                    </button>
+                    <button onClick={() => handleSaveEdit(tx.id)} className="flex-1 py-1 bg-dark-accent rounded text-white font-semibold">
+                      Save
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          {txs.length === 0 && !loading && (
+            <div className="py-12 text-center text-dark-muted text-xs">
+              No transactions match the selected filters.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View: Table layout for md screens and larger */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b border-dark-border bg-dark-bg/40 text-dark-muted text-xs font-semibold uppercase tracking-wider">
