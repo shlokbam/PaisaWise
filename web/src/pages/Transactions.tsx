@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { apiRequest } from "../services/api";
 import { 
-  Search, Edit3, Check, X, Plus 
+  Search, Edit3, Check, X, Plus, Trash2 
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 
@@ -162,6 +162,21 @@ export const Transactions: React.FC = () => {
     }
   };
 
+  const handleDelete = async (txId: string) => {
+    if (!window.confirm("Are you sure you want to delete this transaction permanently?")) {
+      return;
+    }
+    try {
+      await apiRequest(`/transactions/${txId}`, {
+        method: "DELETE"
+      });
+      showToast("Transaction deleted permanently.", "success");
+      setTxs(prev => prev.filter(item => item.id !== txId));
+    } catch (err) {
+      showToast("Failed to delete transaction.", "error");
+    }
+  };
+
   const getOwnershipLabel = (ownership: string) => {
     switch (ownership) {
       case "PERSONAL": return "bg-dark-accent/15 text-dark-accent border-dark-accent/20";
@@ -263,14 +278,23 @@ export const Transactions: React.FC = () => {
                     {tx.include_in_personal_expenses ? "✓ Included" : "Excluded"}
                   </span>
                 </div>
-
-                <button 
-                  onClick={() => handleStartEdit(tx)} 
-                  className="p-1 text-dark-muted hover:text-white hover:bg-dark-hover/40 rounded shrink-0 flex items-center gap-1 text-[11px] font-semibold"
-                >
-                  <Edit3 size={13} />
-                  <span>Edit</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button 
+                    onClick={() => handleStartEdit(tx)} 
+                    className="p-1 text-dark-muted hover:text-white hover:bg-dark-hover/40 rounded flex items-center gap-1 text-[11px] font-semibold"
+                  >
+                    <Edit3 size={13} />
+                    <span>Edit</span>
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(tx.id)} 
+                    className="p-1 text-semantic-expense/80 hover:text-semantic-expense hover:bg-semantic-expense/10 rounded flex items-center gap-1 text-[11px] font-semibold"
+                    title="Delete Transaction"
+                  >
+                    <Trash2 size={13} />
+                    <span>Delete</span>
+                  </button>
+                </div>
               </div>
 
               {/* Mobile Inline Edit Panel */}
@@ -303,39 +327,40 @@ export const Transactions: React.FC = () => {
                         <option value="INVESTMENT">INVESTMENT</option>
                         <option value="REFUND">REFUND</option>
                         <option value="SETTLEMENT">SETTLEMENT</option>
+                        <option value="CASH_WITHDRAWAL">CASH_WITHDRAWAL</option>
                       </select>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-dark-muted block mb-1">Category</label>
-                    <select
-                      value={editCategory}
-                      onChange={(e) => setEditCategory(e.target.value)}
-                      className="w-full bg-dark-card border border-dark-border text-white rounded p-1 text-xs"
-                    >
-                      <option value="">None</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-dark-muted block mb-1">Category</label>
+                      <select
+                        value={editCategory}
+                        onChange={(e) => setEditCategory(e.target.value)}
+                        className="w-full bg-dark-card border border-dark-border text-white rounded p-1 text-xs"
+                      >
+                        <option value="">None</option>
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-end pb-1">
+                      <label className="flex items-center gap-2 text-dark-text cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editInclude}
+                          onChange={(e) => setEditInclude(e.target.checked)}
+                          className="rounded text-dark-accent bg-dark-bg border-dark-border"
+                        />
+                        <span>Include in Personal</span>
+                      </label>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id={`inc-m-${tx.id}`}
-                      checked={editInclude}
-                      onChange={(e) => setEditInclude(e.target.checked)}
-                      className="w-4 h-4 rounded text-dark-accent bg-dark-bg border-dark-border focus:ring-dark-accent"
-                    />
-                    <label htmlFor={`inc-m-${tx.id}`} className="text-dark-text font-medium select-none text-xs">
-                      Include in Personal Expenses
-                    </label>
-                  </div>
-
-                  <div className="flex gap-2 pt-2 border-t border-dark-border">
-                    <button onClick={() => setEditingId(null)} className="flex-1 py-1 border border-dark-border rounded text-dark-muted">
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => setEditingId(null)} className="flex-1 py-1 bg-dark-hover rounded text-dark-muted">
                       Cancel
                     </button>
                     <button onClick={() => handleSaveEdit(tx.id)} className="flex-1 py-1 bg-dark-accent rounded text-white font-semibold">
@@ -480,9 +505,22 @@ export const Transactions: React.FC = () => {
                         </button>
                       </div>
                     ) : (
-                      <button onClick={() => handleStartEdit(tx)} className="p-1 text-dark-muted hover:text-white hover:bg-dark-hover/40 rounded">
-                        <Edit3 size={16} />
-                      </button>
+                      <div className="flex justify-center items-center gap-1.5">
+                        <button 
+                          onClick={() => handleStartEdit(tx)} 
+                          className="p-1.5 text-dark-muted hover:text-white hover:bg-dark-hover/40 rounded transition-colors"
+                          title="Edit Transaction"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(tx.id)} 
+                          className="p-1.5 text-dark-muted hover:text-semantic-expense hover:bg-semantic-expense/10 rounded transition-colors"
+                          title="Delete Transaction"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
