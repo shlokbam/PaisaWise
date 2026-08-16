@@ -15,7 +15,7 @@ def test_rule_evaluation():
     db = SessionLocal()
     try:
         # Get demo user
-        user = db.query(User).filter_by(email="shlok@paisawise.com").first()
+        user = db.query(User).filter_by(email="demo@paisawise.com").first()
         assert user is not None
         
         # Create a test rule

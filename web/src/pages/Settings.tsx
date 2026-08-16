@@ -259,7 +259,7 @@ export const Settings: React.FC = () => {
             {avatarLoading && <p className="text-xs text-dark-accent animate-pulse mb-2">Uploading avatar image...</p>}
             {avatarError && <p className="text-xs text-semantic-expense mb-2">{avatarError}</p>}
 
-            <h4 className="font-semibold text-white">{user?.first_name || "Shlok"}</h4>
+            <h4 className="font-semibold text-white">{user?.first_name || "User"}</h4>
             <p className="text-xs text-dark-muted mt-1">{user?.email}</p>
             <span className="text-[10px] bg-dark-accent/10 border border-dark-accent/20 text-dark-accent px-2.5 py-0.5 rounded-full mt-3 font-semibold">
               PaisaWise User

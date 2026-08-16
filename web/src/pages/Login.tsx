@@ -61,7 +61,7 @@ export const Login: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Shlok"
+                  placeholder="Alex"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   className="w-full !pl-12 glass-input"
@@ -77,7 +77,7 @@ export const Login: React.FC = () => {
               <input
                 type="email"
                 required
-                placeholder="shlok@paisawise.com"
+                placeholder="user@paisawise.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full !pl-12 glass-input"

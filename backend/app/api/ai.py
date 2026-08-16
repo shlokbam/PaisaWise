@@ -20,7 +20,7 @@ class ChatPayload(BaseModel):
 
 SYSTEM_INSTRUCTION = """
 You are the PaisaWise AI Financial Assistant. Your name is PaisaWise AI.
-You help the user, Shlok, understand where his money is actually going.
+You help the user understand where their money is actually going.
 
 You are equipped with read-only tools to query the user's financial database:
 - `get_monthly_summary()`

@@ -16,7 +16,7 @@ def test_read_root():
 def test_auth_and_protected_routes():
     # Login as seeded user
     login_data = {
-        "email": "shlok@paisawise.com",
+        "email": "demo@paisawise.com",
         "password": "password"
     }
     resp = client.post("/api/v1/auth/login-json", json=login_data)

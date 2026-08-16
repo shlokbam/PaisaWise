@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { apiRequest } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import { 
   TrendingUp, TrendingDown, RefreshCw, 
   ArrowUpRight, ArrowDownLeft, ShieldAlert, Sparkles, ChevronRight
@@ -34,7 +35,12 @@ interface DashboardData {
   ai_insight: string;
 }
 
-export const Dashboard: React.FC<{ setTab: (tab: string) => void }> = ({ setTab }) => {
+interface DashboardProps {
+  setTab: (tab: string) => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ setTab }) => {
+  const { user } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +96,7 @@ export const Dashboard: React.FC<{ setTab: (tab: string) => void }> = ({ setTab 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
-            Good evening, Shlok 👋
+            Welcome back, {user?.first_name || "User"} 👋
           </h2>
           <p className="text-dark-muted text-sm mt-1">{data.period}</p>
         </div>

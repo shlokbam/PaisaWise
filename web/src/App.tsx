@@ -116,11 +116,11 @@ const AppContent: React.FC = () => {
         {/* Footer info (User profile) */}
         <div className="p-4 border-t border-dark-border flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-dark-accent/15 border border-dark-accent/30 text-dark-accent font-bold text-xs flex items-center justify-center">
-              SH
+            <div className="w-8 h-8 rounded-full bg-dark-accent/15 border border-dark-accent/30 text-dark-accent font-bold text-xs flex items-center justify-center uppercase">
+              {user?.first_name ? user.first_name.substring(0, 2) : "PW"}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-semibold text-white truncate">{user?.first_name || "Shlok"}</p>
+              <p className="text-sm font-semibold text-white truncate">{user?.first_name || "User"}</p>
               <p className="text-[10px] text-dark-muted truncate">Logged In</p>
             </div>
           </div>

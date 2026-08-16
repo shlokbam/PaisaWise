@@ -16,7 +16,7 @@ from app.services.transaction_service import process_incoming_transaction
 def test_process_transaction_duplicate_and_refund():
     db = SessionLocal()
     try:
-        user = db.query(User).filter_by(email="shlok@paisawise.com").first()
+        user = db.query(User).filter_by(email="demo@paisawise.com").first()
         assert user is not None
         
         # 1. Test Ingestion and Account Auto-creation

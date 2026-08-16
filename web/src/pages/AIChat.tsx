@@ -12,7 +12,7 @@ export const AIChat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "Hello Shlok! I'm PaisaWise AI, your personal financial assistant. You can ask me questions about your budgets, subscriptions, or spending trends. How can I help you today?"
+      content: "Hello! I'm PaisaWise AI, your personal financial assistant. You can ask me questions about your budgets, subscriptions, or spending trends. How can I help you today?"
     }
   ]);
   const [input, setInput] = useState("");

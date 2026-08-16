@@ -24,7 +24,7 @@ def init_database():
     db = SessionLocal()
     try:
         # Check if already seeded
-        existing_user = db.query(User).filter_by(email="shlok@paisawise.com").first()
+        existing_user = db.query(User).filter_by(email="demo@paisawise.com").first()
         if existing_user:
             print("Database already seeded. Skipping seed process.")
             return
@@ -142,9 +142,9 @@ def init_database():
 
         # 3. Create Demo User
         user = User(
-            email="shlok@paisawise.com",
+            email="demo@paisawise.com",
             hashed_password=get_password_hash("password"),
-            first_name="Shlok"
+            first_name="Demo User"
         )
         db.add(user)
         db.flush()
@@ -436,7 +436,7 @@ def init_database():
                 direction="DEBIT",
                 transaction_date=date(2026, 8, 8),
                 transaction_time=time(14, 0),
-                receiver="SHLOK BAM",
+                receiver="SELF ACCOUNT TRANSFER",
                 payment_method="NETBANKING",
                 ownership="PERSONAL",
                 transaction_type="TRANSFER",

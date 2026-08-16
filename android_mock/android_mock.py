@@ -64,9 +64,9 @@ def authenticate_backend() -> Optional[str]:
     login_url = f"{API_BASE_URL}/auth/login-json"
     
     print("\n--- Sync Authentication ---")
-    email = input("Enter email to sync to [default: shlok@paisawise.com]: ").strip()
+    email = input("Enter email to sync to [default: demo@paisawise.com]: ").strip()
     if not email:
-        email = "shlok@paisawise.com"
+        email = "demo@paisawise.com"
     password = input("Enter password [default: password]: ").strip()
     if not password:
         password = "password"
