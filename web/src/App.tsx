@@ -23,8 +23,23 @@ const AppContent: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center text-dark-muted text-sm">
-        Verifying user credentials...
+      <div className="min-h-screen bg-dark-bg flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-dark-accent/20 border border-dark-accent/40 flex items-center justify-center animate-pulse">
+              <img src="/logo.png" alt="PaisaWise Logo" className="w-10 h-10 object-contain" />
+            </div>
+          </div>
+          <div className="text-center space-y-1.5">
+            <h3 className="text-lg font-bold text-white tracking-tight">
+              <span className="text-dark-accent">Paisa</span>Wise
+            </h3>
+            <div className="flex items-center gap-2 justify-center text-xs text-dark-muted">
+              <div className="w-2 h-2 rounded-full bg-dark-accent animate-ping" />
+              <span>Connecting to secure cloud server...</span>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

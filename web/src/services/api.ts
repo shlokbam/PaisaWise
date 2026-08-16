@@ -4,13 +4,16 @@ import { Capacitor } from '@capacitor/core';
 const envUrl = import.meta.env.VITE_API_BASE_URL;
 
 function getApiBaseUrl(): string {
+  if (envUrl && envUrl.startsWith("http")) {
+    return envUrl;
+  }
   if (Capacitor.isNativePlatform()) {
-    if (envUrl && !envUrl.includes("127.0.0.1") && !envUrl.includes("localhost")) {
-      return envUrl;
-    }
     return "https://paisawise-api.onrender.com/api/v1";
   }
-  return envUrl || "http://127.0.0.1:8000/api/v1";
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return "https://paisawise-api.onrender.com/api/v1";
+  }
+  return "http://127.0.0.1:8000/api/v1";
 }
 
 const API_BASE_URL = getApiBaseUrl();
